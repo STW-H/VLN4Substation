@@ -1,0 +1,227 @@
+# VLN4Substation
+
+变电站巡检机器人视觉语言导航研究原型。当前项目围绕 220 kV 二妃山变电站数据，完成点云/3D Gaussian 数据组织、可视化、坐标对齐，并为后续二维地图、可通行区域标注和局部主动观测位姿优化提供基础工具链。
+
+## Main Functionality
+
+当前仓库主要包含：
+
+```text
+1. LAS/LAZ 点云转换为真实坐标 PLY
+2. 完整点云可视化与坐标轴查看
+3. Habitat-GS 3D Gaussian 渲染查看
+4. 原始 LAS 与原始 Gaussian 尺度粗检查
+5. Y-up Gaussian 到完整点云的手工点粗配准 + ICP 精配准
+6. ICP 滤波效果预览
+7. 高斯点云与完整点云的线段尺度测量
+```
+
+当前算法思路见：
+
+```text
+substation_vln/docs/algorithm_overview.md
+```
+
+## Repository Layout
+
+```text
+.
+├── environment.yml                # 本项目工具依赖参考
+├── external/                      # Habitat-GS / Habitat-Lab 等外部依赖，本地准备，不提交 Git
+├── substation_vln/
+│   ├── src/substation_vln/         # 可复用 Python 模块
+│   ├── tools/                      # 命令行工具入口
+│   ├── docs/                       # 算法思路文档
+│   ├── configs/                    # 后续实验配置
+│   ├── data/                       # 本地数据目录，不提交 Git
+│   └── outputs/                    # 可视化和实验输出，不提交 Git
+├── 变电站巡检机器人视觉语言导航研究方案.md
+└── .gitignore
+```
+
+## Environment Setup
+
+建议系统：
+
+```text
+OS: Ubuntu 24.04
+GPU: NVIDIA GPU
+Conda: Miniconda / Anaconda
+```
+
+先检查 GPU 和 OpenGL：
+
+```bash
+nvidia-smi
+glxinfo | grep "OpenGL version"
+```
+
+如果没有 `glxinfo`：
+
+```bash
+sudo apt update
+sudo apt install mesa-utils
+```
+
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/STW-H/VLN4Substation.git
+cd VLN4Substation
+```
+
+### 2. Prepare External Dependencies First
+
+本仓库默认不提交 `external/`。请先准备：
+
+```text
+external/
+├── habitat-gs/
+└── habitat-lab/
+```
+
+建议顺序：
+
+```text
+1. 安装 Habitat-GS
+2. 安装或准备 Habitat-Lab
+3. 确认 Habitat-GS 中集成的 Habitat-Sim 可用
+4. 再安装本仓库工具所需的额外 Python 包
+```
+
+Habitat-GS / Habitat-Sim 对 CUDA、显卡驱动、编译器和 Ubuntu 版本比较敏感，应优先按照 Habitat-GS 官方 README 安装。当前项目不把 external 作为 submodule 管理；如果需要严格复现，建议 fork Habitat-GS 并记录 commit 与本地补丁。
+
+当前本地使用中涉及过的 Habitat-GS 兼容性处理包括：
+
+```text
+CUDA 架构适配 RTX 4060 Laptop GPU
+Ubuntu 24.04 / 新 CUDA 版本兼容处理
+matplotlib 新版本 colormap API 兼容处理
+gaussian_viewer.py 增加启动位置和 yaw 参数
+```
+
+### 3. Conda Environment
+
+如果已经按照 Habitat-GS 安装好了环境，直接激活：
+
+```bash
+conda activate habitat-gs
+```
+
+然后补充本项目工具依赖：
+
+```bash
+pip install open3d laspy lazrs pillow matplotlib scipy
+```
+
+也可以使用仓库中的 `environment.yml` 作为参考创建环境：
+
+```bash
+conda env create -f environment.yml
+conda activate habitat-gs
+```
+
+注意：`environment.yml` 只覆盖本仓库工具层常用依赖，不替代 Habitat-GS / Habitat-Sim 的源码编译安装。更稳妥的方式通常是：先按 Habitat-GS 官方流程建好 `habitat-gs` 环境，再用上面的 `pip install` 补齐本项目工具包。
+
+## Data Placement
+
+本仓库不包含点云和高斯大文件。建议本地组织为：
+
+```text
+substation_vln/data/raw/220kv_erfeishan/
+├── gaussian/
+├── pointcloud/
+├── metadata/
+└── viewer/
+
+substation_vln/data/processed/220kv_erfeishan/
+├── gaussian_yup/
+├── pointcloud/
+├── registration/
+├── maps/
+├── navmesh/
+├── safety/
+└── semantic/
+```
+
+当前常用文件：
+
+```text
+substation_vln/data/processed/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled_real_coords.ply
+substation_vln/data/processed/220kv_erfeishan/gaussian_yup/layer_2_yup.gs.ply
+substation_vln/data/processed/220kv_erfeishan/registration/gaussian_to_pointcloud_transform.json
+```
+
+## Common Commands
+
+查看完整点云：
+
+```bash
+python substation_vln/tools/view_pointcloud.py \
+  substation_vln/data/processed/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled_real_coords.ply
+```
+
+查看 3D Gaussian 渲染：
+
+```bash
+python substation_vln/tools/view_gaussian.py \
+  substation_vln/data/processed/220kv_erfeishan/gaussian_yup/layer_2_yup.gs.ply
+```
+
+高斯点云注册到完整点云：
+
+```bash
+python substation_vln/tools/register_gaussian_to_pointcloud.py \
+  --correspondences substation_vln/data/processed/220kv_erfeishan/registration/gaussian_to_pointcloud_transform.json
+```
+
+重新手工选点配准：
+
+```bash
+python substation_vln/tools/register_gaussian_to_pointcloud.py \
+  --num-points 6 \
+  --pick-order gaussian-first
+```
+
+预览 ICP 滤波效果：
+
+```bash
+python substation_vln/tools/register_gaussian_to_pointcloud.py \
+  --preview-icp-filter substation_vln/data/processed/220kv_erfeishan/registration/gaussian_to_pointcloud_transform.json
+```
+
+测量高斯点云与完整点云的尺度差异：
+
+```bash
+python substation_vln/tools/measure_gaussian_pointcloud_scale.py \
+  --pick-order gaussian-first
+```
+
+## Git Policy
+
+点云、高斯文件、渲染输出和外部依赖体积较大，默认不提交到 Git。建议 `.gitignore` 保留：
+
+```gitignore
+external/
+substation_vln/data/raw/
+substation_vln/data/processed/
+substation_vln/outputs/
+*.ply
+*.las
+*.laz
+*.pcd
+*.LiData
+__pycache__/
+*.pyc
+```
+
+仓库主要提交：
+
+```text
+README.md
+environment.yml
+substation_vln/docs/
+substation_vln/src/
+substation_vln/tools/
+```
+
