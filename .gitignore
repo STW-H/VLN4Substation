@@ -1,0 +1,11 @@
+external/
+substation_vln/data/raw/
+substation_vln/data/processed/
+substation_vln/outputs/
+*.ply
+*.las
+*.laz
+*.pcd
+*.LiData
+__pycache__/
+*.pyc
