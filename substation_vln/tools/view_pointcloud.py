@@ -24,6 +24,7 @@ from substation_vln.pointcloud_io import (  # noqa: E402
     import_open3d,
     load_las_as_pcd,
 )
+from substation_vln.visualization import centered_display_pcd, coordinate_frame_for_points  # noqa: E402
 
 
 def load_point_cloud(path: Path, max_points: int):
@@ -121,21 +122,15 @@ def main() -> int:
 
     view_pcd = pcd
     if not args.no_center:
-        import copy
-
-        view_pcd = copy.deepcopy(pcd)
-        points = np.asarray(view_pcd.points)
-        points -= points.mean(axis=0)
-        view_pcd.points = o3d.utility.Vector3dVector(points)
+        view_pcd, display_center = centered_display_pcd(o3d, pcd)
+        print(f"display center subtracted only for visualization: {display_center}")
         print("\nVisualization coordinates after centering:")
         print(describe_pcd(view_pcd))
 
     if not args.info:
         geometries = [view_pcd]
         if not args.no_frame:
-            extent = np.ptp(np.asarray(view_pcd.points), axis=0)
-            frame_size = max(float(extent.max()) * 0.05, 1.0)
-            geometries.append(o3d.geometry.TriangleMesh.create_coordinate_frame(size=frame_size))
+            geometries.append(coordinate_frame_for_points(o3d, np.asarray(view_pcd.points)))
         o3d.visualization.draw_geometries(geometries, window_name=path.name)
 
     return 0

@@ -76,35 +76,3 @@ def write_las_real_ply(input_path: Path, output_path: Path, chunk_size: int, met
         with open(metadata_output, "w", encoding="utf-8") as f:
             json.dump(metadata, f, ensure_ascii=False, indent=2)
         print(f"metadata: {metadata_output}")
-
-
-def sample_las_local(path: Path, max_points: int):
-    try:
-        import laspy
-    except ImportError as exc:
-        raise SystemExit("Please install LAS support: pip install laspy lazrs") from exc
-
-    with laspy.open(path) as reader:
-        header = reader.header
-        point_count = int(header.point_count)
-        origin = np.asarray(header.mins, dtype=np.float64)
-        max_points = point_count if max_points <= 0 else min(max_points, point_count)
-        step = max(1, int(np.ceil(point_count / max_points)))
-
-        xs, ys, zs = [], [], []
-        seen = 0
-        kept = 0
-        for points in reader.chunk_iterator(1_000_000):
-            local = np.arange(len(points))
-            mask = ((seen + local) % step) == 0
-            if np.any(mask):
-                xs.append(points.x[mask])
-                ys.append(points.y[mask])
-                zs.append(points.z[mask])
-                kept += int(mask.sum())
-            seen += len(points)
-            if kept >= max_points:
-                break
-
-    points = np.vstack((np.concatenate(xs), np.concatenate(ys), np.concatenate(zs))).T
-    return points[:max_points] - origin, origin

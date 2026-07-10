@@ -5,6 +5,7 @@ The package contains reusable implementation code. Scripts under
 """
 
 __all__ = [
+    "coordinate_transforms",
     "geometry",
     "habitat_gs",
     "las",
@@ -12,4 +13,6 @@ __all__ = [
     "picking",
     "pointcloud_io",
     "registration",
+    "serialization",
+    "visualization",
 ]

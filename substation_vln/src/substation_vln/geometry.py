@@ -2,17 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import numpy as np
 
 
 def transform_points(points: np.ndarray, matrix: np.ndarray) -> np.ndarray:
     return points @ matrix[:3, :3].T + matrix[:3, 3]
-
-
-def segment_length(points: np.ndarray) -> float:
-    return float(np.linalg.norm(points[1] - points[0]))
 
 
 def bounds_text(name: str, points: np.ndarray) -> str:
@@ -52,8 +46,3 @@ def umeyama_similarity(source: np.ndarray, target: np.ndarray) -> tuple[float, n
     transformed = transform_points(source, matrix)
     rmse = float(np.sqrt(np.mean(np.sum((transformed - target) ** 2, axis=1))))
     return scale, rotation, translation, matrix, rmse
-
-
-def make_coordinate_frame(o3d: Any, points: np.ndarray, ratio: float = 0.05, min_size: float = 1.0):
-    frame_size = max(float(np.ptp(points, axis=0).max()) * ratio, min_size)
-    return o3d.geometry.TriangleMesh.create_coordinate_frame(size=frame_size)

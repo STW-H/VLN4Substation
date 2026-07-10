@@ -9,7 +9,7 @@ from typing import Any
 import numpy as np
 
 from .geometry import transform_points
-from .pointcloud_io import make_pcd
+from .pointcloud_io import make_pcd, transform_binary_ply_xyz
 
 
 def load_correspondences(path: Path) -> tuple[np.ndarray, np.ndarray]:
@@ -39,6 +39,37 @@ def save_transform(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\nSaved transform: {path}")
+
+
+def save_aligned_gaussian(
+    source_gaussian: Path,
+    output_path: Path,
+    metadata_path: Path,
+    matrix: np.ndarray,
+    target_pointcloud: Path,
+    registration_json: Path,
+) -> None:
+    """Save Gaussian centers transformed into the processed point-cloud frame."""
+    output_path = output_path.expanduser().resolve()
+    metadata_path = metadata_path.expanduser().resolve()
+    print(f"\nSaving aligned Gaussian point cloud: {output_path}")
+    stats = transform_binary_ply_xyz(source_gaussian, output_path, matrix)
+    payload = {
+        "source_gaussian": str(source_gaussian),
+        "target_pointcloud": str(target_pointcloud),
+        "registration_json": str(registration_json),
+        "output": str(output_path),
+        "transform_direction": "p_processed_gaussian = T_gaussian_to_pointcloud @ p_raw_gaussian_homogeneous",
+        "matrix": np.asarray(matrix).tolist(),
+        "note": (
+            "This file is the Gaussian center point cloud transformed into the processed point-cloud coordinate "
+            "system. It is intended for downstream point-cloud/map workflows."
+        ),
+        "output_stats": stats,
+    }
+    metadata_path.parent.mkdir(parents=True, exist_ok=True)
+    metadata_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"aligned Gaussian metadata: {metadata_path}")
 
 
 def preprocess_for_icp(o3d: Any, pcd, voxel_size: float, estimate_normals: bool):

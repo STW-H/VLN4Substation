@@ -57,7 +57,6 @@ substation_vln/data/raw/<site_name>/
 substation_vln/data/processed/<site_name>/
 ├── pointcloud/
 ├── gaussian/
-├── gaussian_yup/
 ├── registration/
 ├── maps/
 ├── navmesh/
@@ -94,50 +93,29 @@ RGB 是否正常保留
 
 ### 2.3 高斯点云预处理
 
-原始 3D Gaussian 文件通常不能直接用于 Habitat-GS 或当前配准流程，需要先确认坐标轴方向。当前二妃山数据中，原始高斯为 Z-up，Habitat-GS 使用时需要转换为 Y-up。
+原始 3D Gaussian 文件首先保留在 `raw/gaussian/` 中。当前二妃山数据中，原始高斯为 Z-up；为了避免混淆，项目不把 Y-up 副本作为常规预处理结果保存到 `processed/`。
 
 处理流程：
 
 ```text
 原始 Gaussian PLY
-  -> 使用 Habitat-GS 官方 rotate_gs.py 做坐标轴旋转
-  -> 生成 processed/gaussian_yup/*.gs.ply
-  -> 使用 Habitat-GS 查看渲染效果
-  -> 使用 Open3D 以高斯中心点形式检查结构与颜色
+  -> 保留在 raw/gaussian/ 作为基准高斯数据
+  -> 使用 Habitat-GS 查看时，由 view_gaussian.py 自动生成或复用 outputs/ 下的 Y-up 可视化缓存
+  -> 在配准工具中以高斯中心点形式检查结构与颜色
+  -> 后续若生成滤波、对齐、坐标矫正后的高斯点云，再保存到 processed/gaussian/
 ```
 
 当前工具：
 
 ```text
-substation_vln/tools/rotate_erfeishan_gaussians_yup.sh
 substation_vln/tools/view_gaussian.py
 ```
 
-### 2.4 粗尺度检查
+说明：Habitat-GS 内部仍使用 Y-up 坐标习惯。`view_gaussian.py` 会优先查找 `outputs/220kv_erfeishan/gaussian_yup_cache/` 中的缓存文件；若不存在或原始高斯更新，则重新生成。该缓存属于可视化输出，可以删除并自动重建；正式数据管理仍以 Z-up 原始高斯为基准。
 
-正式配准前，先粗略检查完整点云和原始高斯点云是否存在明显尺度差异或方向差异。
+### 2.4 高斯到完整点云配准
 
-当前工具：
-
-```text
-substation_vln/tools/overlay_las_gaussian_raw.py
-substation_vln/tools/measure_gaussian_pointcloud_scale.py
-```
-
-重点检查：
-
-```text
-整体 extent 是否同量级
-长边方向是否一致
-高度方向是否一致
-选取同一物理线段时，两边长度比例是否接近 1
-```
-
-如果尺度差异很小，可以继续使用相似变换 + ICP 完成统一坐标对齐。如果尺度差异很大，需要先确认数据来源、坐标单位和高斯训练过程是否引入了尺度归一化。
-
-### 2.5 高斯到完整点云配准
-
-当前以完整点云真实坐标系作为参考坐标系，将 Y-up 高斯点云注册到完整点云。
+当前以坐标轴矫正后的完整点云作为参考坐标系，将原始 Z-up 高斯中心点注册到完整点云。
 
 配准流程：
 
@@ -148,7 +126,8 @@ substation_vln/tools/measure_gaussian_pointcloud_scale.py
 4. 对参与 ICP 的高斯点云进行范围、高度和统计离群点过滤
 5. 对完整点云和高斯点云执行 ICP 精配准
 6. 保存 Gaussian -> PointCloud 的最终变换矩阵
-7. 在同一窗口中可视化完整点云和变换后的高斯点云，人工确认效果
+7. 保存对齐后的高斯点云到 `processed/gaussian/`
+8. 在同一窗口中可视化完整点云和变换后的高斯点云，人工确认效果
 ```
 
 当前工具：
@@ -172,18 +151,33 @@ ICP 参数和结果
 最终 Gaussian -> PointCloud 变换矩阵
 ```
 
-### 2.6 预处理结果
+### 2.5 预处理结果
 
 完成预处理后，应得到以下基础数据：
 
 ```text
 完整点云真实坐标 PLY
-Y-up 高斯场景文件
+完整点云坐标轴矫正 PLY
+raw/gaussian/ 中的原始 Z-up 高斯文件
 Gaussian -> PointCloud 坐标变换矩阵
+processed/gaussian/ 中对齐后的高斯点云
 点云和高斯的可视化检查结果
 ```
 
 这些数据为后续地图生成、语义标注、安全约束构建和局部观测位姿优化提供统一坐标基础。
+
+### 2.6 当前保留的工具脚本
+
+当前 `substation_vln/tools/` 只保留通用命令行入口：
+
+```text
+convert_las_to_real_ply.py              # LAS/LAZ 转真实坐标 PLY
+view_pointcloud.py                      # 查看完整点云和普通点云
+view_gaussian.py                        # 使用 Habitat-GS 查看/渲染高斯
+register_gaussian_to_pointcloud.py      # Gaussian 到完整点云配准
+```
+
+站点专用、一次性、可由官方工具替代的脚本不再放在 `tools/` 中。
 
 ## 3. 预处理后的标注流程
 
@@ -191,7 +185,18 @@ Gaussian -> PointCloud 坐标变换矩阵
 
 ### 3.1 可通行区域标注
 
-首先需要在完整点云或由点云生成的二维投影图上标注机器人可通行区域。
+首先需要沿完整点云 Z 方向生成 X-Y 平面的高清俯视底图，然后在该底图上标注机器人可通行区域。俯视图像需要同时保存像素坐标和真实世界坐标之间的转换关系，便于后续将标注 mask 还原到地图坐标系。
+
+底图生成结果应包括：
+
+```text
+Z 方向俯视 RGB 图像
+图像分辨率，单位 m/pixel
+图像宽高
+点云 XYZ 范围
+pixel -> world XY 坐标转换关系
+world XY -> pixel 坐标转换关系
+```
 
 需要标注：
 
@@ -299,4 +304,3 @@ VLM/VLN 黑盒评价与局部决策接口
 ```
 
 当前阶段先以“完成可靠预处理和坐标统一”为主，确保后续地图、标注和局部观测算法都建立在同一坐标基础上。
-

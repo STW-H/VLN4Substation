@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Register processed Y-up Gaussian point cloud to processed full point cloud.
+"""Register Gaussian centers to the processed full point cloud.
 
 The reusable PLY loading, picking, geometry, and ICP logic lives under
 substation_vln/src/substation_vln. This file is intentionally a command-line
@@ -23,7 +23,12 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from substation_vln.geometry import bounds_text, transform_points, umeyama_similarity  # noqa: E402
-from substation_vln.paths import DEFAULT_GAUSSIAN, DEFAULT_POINTCLOUD, DEFAULT_REGISTRATION  # noqa: E402
+from substation_vln.paths import (  # noqa: E402
+    DEFAULT_ALIGNED_GAUSSIAN,
+    DEFAULT_AXIS_CORRECTED_POINTCLOUD,
+    DEFAULT_GAUSSIAN,
+    DEFAULT_REGISTRATION,
+)
 from substation_vln.picking import pick_with_pause  # noqa: E402
 from substation_vln.pointcloud_io import import_open3d, make_pcd, sample_ply_points  # noqa: E402
 from substation_vln.registration import (  # noqa: E402
@@ -31,8 +36,10 @@ from substation_vln.registration import (  # noqa: E402
     filter_target_for_icp,
     load_correspondences,
     run_icp,
+    save_aligned_gaussian,
     save_transform,
 )
+from substation_vln.visualization import configure_default_camera, configure_visualizer, coordinate_frame_for_points  # noqa: E402
 
 
 def visualize_registration(o3d: Any, pointcloud_pcd, gaussian_pcd, final_matrix: np.ndarray) -> None:
@@ -46,7 +53,6 @@ def visualize_registration(o3d: Any, pointcloud_pcd, gaussian_pcd, final_matrix:
     scene_min = np.minimum(pc_min, gs_min)
     scene_max = np.maximum(pc_max, gs_max)
     scene_center = (scene_min + scene_max) * 0.5
-    scene_extent = scene_max - scene_min
 
     print("\nRegistration overlay bounds before display centering:")
     print(bounds_text("complete point cloud", pointcloud_points))
@@ -62,8 +68,11 @@ def visualize_registration(o3d: Any, pointcloud_pcd, gaussian_pcd, final_matrix:
     display_gaussian = make_pcd(o3d, transformed_gaussian_points - scene_center, color=(1.0, 0.05, 0.02))
     display_gaussian.paint_uniform_color([1.0, 0.05, 0.02])
 
-    frame_size = max(float(scene_extent.max()) * 0.06, 1.0)
-    frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=frame_size)
+    frame = coordinate_frame_for_points(
+        o3d,
+        np.vstack([pointcloud_points - scene_center, transformed_gaussian_points - scene_center]),
+        ratio=0.06,
+    )
 
     print("\nColor legend: complete point cloud=original colors, transformed Gaussian=red")
     print("Note: coordinates are temporarily centered for display only; saved transform remains in real coordinates.")
@@ -73,17 +82,8 @@ def visualize_registration(o3d: Any, pointcloud_pcd, gaussian_pcd, final_matrix:
     for geometry in (display_pointcloud, display_gaussian, frame):
         vis.add_geometry(geometry)
 
-    render_option = vis.get_render_option()
-    if render_option is not None:
-        render_option.background_color = np.asarray([0.02, 0.02, 0.02])
-        render_option.point_size = 2.0
-
-    view_control = vis.get_view_control()
-    if view_control is not None:
-        view_control.set_lookat([0.0, 0.0, 0.0])
-        view_control.set_front([0.0, -1.0, 0.35])
-        view_control.set_up([0.0, 0.0, 1.0])
-        view_control.set_zoom(0.65)
+    configure_visualizer(vis, point_size=2.0)
+    configure_default_camera(vis)
 
     vis.run()
     vis.destroy_window()
@@ -102,6 +102,21 @@ def load_filter_preview_matrix(path: Path) -> np.ndarray:
     return np.asarray(matrix, dtype=np.float64)
 
 
+def resolve_pointcloud_input(path: Path) -> Path:
+    """Accept either a PLY point cloud or an axis-correction JSON metadata file."""
+    resolved = path.expanduser().resolve()
+    if resolved.suffix.lower() != ".json":
+        return resolved
+
+    data = json.loads(resolved.read_text(encoding="utf-8"))
+    output = data.get("output")
+    if not output:
+        raise SystemExit(f"Point-cloud JSON has no output field: {resolved}")
+    pointcloud_path = Path(output).expanduser().resolve()
+    print(f"Using axis-corrected point cloud from JSON output field: {pointcloud_path}")
+    return pointcloud_path
+
+
 def visualize_icp_filter(o3d: Any, gaussian_pcd, keep_mask: np.ndarray, matrix: np.ndarray) -> None:
     gaussian_points = np.asarray(gaussian_pcd.points)
     gaussian_colors = np.asarray(gaussian_pcd.colors) if gaussian_pcd.has_colors() else None
@@ -114,7 +129,6 @@ def visualize_icp_filter(o3d: Any, gaussian_pcd, keep_mask: np.ndarray, matrix: 
     transformed_removed = transform_points(removed_points, matrix) if len(removed_points) else np.empty((0, 3))
 
     scene_center = (transformed_gaussian.min(axis=0) + transformed_gaussian.max(axis=0)) * 0.5
-    scene_extent = transformed_gaussian.max(axis=0) - transformed_gaussian.min(axis=0)
 
     print("\nICP filter preview bounds before display centering:")
     print(bounds_text("Gaussian all points", transformed_gaussian))
@@ -138,8 +152,7 @@ def visualize_icp_filter(o3d: Any, gaussian_pcd, keep_mask: np.ndarray, matrix: 
         display_removed.paint_uniform_color([1.0, 0.0, 0.0])
         geometries.append(display_removed)
 
-    frame_size = max(float(scene_extent.max()) * 0.06, 1.0)
-    geometries.append(o3d.geometry.TriangleMesh.create_coordinate_frame(size=frame_size))
+    geometries.append(coordinate_frame_for_points(o3d, transformed_gaussian - scene_center, ratio=0.06))
 
     print("\nColor legend: Gaussian kept for ICP=original RGB, Gaussian removed by filter=red")
     print("Tip: red points are filtered out and will not participate in ICP.")
@@ -149,27 +162,31 @@ def visualize_icp_filter(o3d: Any, gaussian_pcd, keep_mask: np.ndarray, matrix: 
     for geometry in geometries:
         vis.add_geometry(geometry)
 
-    render_option = vis.get_render_option()
-    if render_option is not None:
-        render_option.background_color = np.asarray([0.02, 0.02, 0.02])
-        render_option.point_size = 2.0
-
-    view_control = vis.get_view_control()
-    if view_control is not None:
-        view_control.set_lookat([0.0, 0.0, 0.0])
-        view_control.set_front([0.0, -1.0, 0.35])
-        view_control.set_up([0.0, 0.0, 1.0])
-        view_control.set_zoom(0.65)
+    configure_visualizer(vis, point_size=2.0)
+    configure_default_camera(vis)
 
     vis.run()
     vis.destroy_window()
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Register Y-up Gaussian point cloud to processed full point cloud.")
-    parser.add_argument("--pointcloud", type=Path, default=DEFAULT_POINTCLOUD, help="Processed complete point cloud PLY")
-    parser.add_argument("--gaussian", type=Path, default=DEFAULT_GAUSSIAN, help="Processed Y-up Gaussian PLY")
+    parser = argparse.ArgumentParser(description="Register Gaussian centers to the processed full point cloud.")
+    parser.add_argument(
+        "--pointcloud",
+        type=Path,
+        default=DEFAULT_AXIS_CORRECTED_POINTCLOUD,
+        help="Processed complete point cloud PLY, or axis-correction JSON whose output field points to the PLY",
+    )
+    parser.add_argument("--gaussian", type=Path, default=DEFAULT_GAUSSIAN, help="Gaussian PLY; default is raw Z-up Gaussian")
     parser.add_argument("--output", type=Path, default=DEFAULT_REGISTRATION, help="Output transform JSON")
+    parser.add_argument(
+        "--aligned-gaussian-output",
+        type=Path,
+        default=DEFAULT_ALIGNED_GAUSSIAN,
+        help="Processed aligned Gaussian point-cloud PLY output",
+    )
+    parser.add_argument("--aligned-gaussian-metadata", type=Path, help="Processed aligned Gaussian metadata JSON")
+    parser.add_argument("--no-save-aligned-gaussian", action="store_true", help="Do not save processed aligned Gaussian")
     parser.add_argument("--num-points", type=int, default=6, help="Number of manual correspondence points")
     parser.add_argument(
         "--pointcloud-sample-points",
@@ -211,7 +228,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
 
-    pointcloud_path = args.pointcloud.expanduser().resolve()
+    pointcloud_path = resolve_pointcloud_input(args.pointcloud)
     gaussian_path = args.gaussian.expanduser().resolve()
     if not pointcloud_path.exists():
         raise SystemExit(f"Point cloud not found: {pointcloud_path}")
@@ -242,7 +259,7 @@ def main() -> int:
         manual_gaussian = pick_with_pause(
             o3d,
             gaussian_pcd,
-            "Step 1/2: pick source/moving points on processed Y-up Gaussian centers",
+            "Step 1/2: pick source/moving points on Gaussian centers",
             args.num_points,
         )
         manual_pointcloud = pick_with_pause(
@@ -261,7 +278,7 @@ def main() -> int:
         manual_gaussian = pick_with_pause(
             o3d,
             gaussian_pcd,
-            "Step 2/2: pick source/moving points on processed Y-up Gaussian centers",
+            "Step 2/2: pick source/moving points on Gaussian centers",
             args.num_points,
         )
 
@@ -329,7 +346,24 @@ def main() -> int:
         "final_manual_pair_rmse": final_manual_rmse,
         "final_matrix": np.asarray(final_matrix).tolist(),
     }
-    save_transform(args.output.expanduser().resolve(), payload)
+    registration_output = args.output.expanduser().resolve()
+    save_transform(registration_output, payload)
+
+    if not args.no_save_aligned_gaussian:
+        aligned_output = args.aligned_gaussian_output.expanduser().resolve()
+        aligned_metadata = (
+            args.aligned_gaussian_metadata.expanduser().resolve()
+            if args.aligned_gaussian_metadata
+            else aligned_output.with_suffix(".json")
+        )
+        save_aligned_gaussian(
+            gaussian_path,
+            aligned_output,
+            aligned_metadata,
+            final_matrix,
+            pointcloud_path,
+            registration_output,
+        )
 
     if not args.no_view:
         visualize_registration(o3d, pointcloud_pcd, gaussian_pcd, final_matrix)

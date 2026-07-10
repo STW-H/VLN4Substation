@@ -9,11 +9,11 @@
 ```text
 1. LAS/LAZ 点云转换为真实坐标 PLY
 2. 完整点云可视化与坐标轴查看
-3. Habitat-GS 3D Gaussian 渲染查看
-4. 原始 LAS 与原始 Gaussian 尺度粗检查
-5. Y-up Gaussian 到完整点云的手工点粗配准 + ICP 精配准
-6. ICP 滤波效果预览
-7. 高斯点云与完整点云的线段尺度测量
+3. Habitat-GS 3D Gaussian 渲染查看，脚本自动维护 outputs 下的 Z-up 到 Habitat Y-up 可视化缓存
+4. LAS 点云坐标轴矫正
+5. Gaussian 到完整点云的手工点粗配准 + ICP 精配准
+6. 对齐后的 Gaussian 点云预处理输出
+7. ICP 滤波效果预览
 ```
 
 当前算法思路见：
@@ -135,7 +135,7 @@ substation_vln/data/raw/220kv_erfeishan/
 └── viewer/
 
 substation_vln/data/processed/220kv_erfeishan/
-├── gaussian_yup/
+├── gaussian/
 ├── pointcloud/
 ├── registration/
 ├── maps/
@@ -147,8 +147,9 @@ substation_vln/data/processed/220kv_erfeishan/
 当前常用文件：
 
 ```text
-substation_vln/data/processed/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled_real_coords.ply
-substation_vln/data/processed/220kv_erfeishan/gaussian_yup/layer_2_yup.gs.ply
+substation_vln/data/raw/220kv_erfeishan/gaussian/layer_2_point_cloud.ply
+substation_vln/data/processed/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled_real_coords_axis_corrected.ply
+substation_vln/data/processed/220kv_erfeishan/gaussian/layer_2_aligned_to_axis_corrected_pointcloud.ply
 substation_vln/data/processed/220kv_erfeishan/registration/gaussian_to_pointcloud_transform.json
 ```
 
@@ -161,11 +162,18 @@ python substation_vln/tools/view_pointcloud.py \
   substation_vln/data/processed/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled_real_coords.ply
 ```
 
+LAS 转真实坐标 PLY，并可选做坐标轴矫正：
+
+```bash
+python substation_vln/tools/convert_las_to_real_ply.py \
+  substation_vln/data/raw/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled.las \
+  --axis-correct
+```
+
 查看 3D Gaussian 渲染：
 
 ```bash
-python substation_vln/tools/view_gaussian.py \
-  substation_vln/data/processed/220kv_erfeishan/gaussian_yup/layer_2_yup.gs.ply
+python substation_vln/tools/view_gaussian.py
 ```
 
 高斯点云注册到完整点云：
@@ -188,13 +196,6 @@ python substation_vln/tools/register_gaussian_to_pointcloud.py \
 ```bash
 python substation_vln/tools/register_gaussian_to_pointcloud.py \
   --preview-icp-filter substation_vln/data/processed/220kv_erfeishan/registration/gaussian_to_pointcloud_transform.json
-```
-
-测量高斯点云与完整点云的尺度差异：
-
-```bash
-python substation_vln/tools/measure_gaussian_pointcloud_scale.py \
-  --pick-order gaussian-first
 ```
 
 ## Git Policy
@@ -224,4 +225,3 @@ substation_vln/docs/
 substation_vln/src/
 substation_vln/tools/
 ```
-

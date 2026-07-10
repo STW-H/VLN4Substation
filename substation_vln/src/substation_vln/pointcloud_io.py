@@ -79,10 +79,14 @@ def parse_binary_ply_vertex(path: Path) -> tuple[int, list[tuple[str, str]], int
     return vertex_count, props, len(header_bytes)
 
 
+def binary_ply_dtype(props: list[tuple[str, str]]) -> np.dtype:
+    return np.dtype([(name, PLY_TYPES[prop_type]) for name, prop_type in props])
+
+
 def sample_ply_points(path: Path, max_points: int) -> tuple[np.ndarray, np.ndarray | None]:
     vertex_count, props, data_offset = parse_binary_ply_vertex(path)
     names = [name for name, _ in props]
-    dtype = np.dtype([(name, PLY_TYPES[prop_type]) for name, prop_type in props])
+    dtype = binary_ply_dtype(props)
     if not {"x", "y", "z"}.issubset(names):
         raise SystemExit(f"PLY has no x/y/z properties: {path}")
 
@@ -108,6 +112,63 @@ def sample_ply_points(path: Path, max_points: int) -> tuple[np.ndarray, np.ndarr
         )
         colors = np.clip(colors * sh_c0 + 0.5, 0.0, 1.0)
     return points, colors
+
+
+def transform_binary_ply_xyz(
+    input_path: Path,
+    output_path: Path,
+    matrix: np.ndarray,
+    chunk_size: int = 1_000_000,
+) -> dict[str, Any]:
+    """Stream-copy a binary PLY while transforming x/y/z coordinates."""
+    input_path = input_path.expanduser().resolve()
+    output_path = output_path.expanduser().resolve()
+    vertex_count, props, data_offset = parse_binary_ply_vertex(input_path)
+    names = [name for name, _ in props]
+    if not {"x", "y", "z"}.issubset(names):
+        raise SystemExit(f"PLY has no x/y/z properties: {input_path}")
+
+    dtype = binary_ply_dtype(props)
+    transform = np.asarray(matrix, dtype=np.float64)
+    if transform.shape == (4, 4):
+        rotation = transform[:3, :3]
+        translation = transform[:3, 3]
+    elif transform.shape == (3, 3):
+        rotation = transform
+        translation = np.zeros(3, dtype=np.float64)
+    else:
+        raise ValueError("matrix must be 3x3 or 4x4")
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    records = np.memmap(input_path, dtype=dtype, mode="r", offset=data_offset, shape=(vertex_count,))
+
+    transformed_min = np.array([np.inf, np.inf, np.inf], dtype=np.float64)
+    transformed_max = np.array([-np.inf, -np.inf, -np.inf], dtype=np.float64)
+
+    with open(input_path, "rb") as src, open(output_path, "wb") as dst:
+        dst.write(src.read(data_offset))
+        for start in range(0, vertex_count, chunk_size):
+            end = min(start + chunk_size, vertex_count)
+            chunk = np.array(records[start:end], copy=True)
+            xyz = np.column_stack([chunk["x"], chunk["y"], chunk["z"]]).astype(np.float64, copy=False)
+            transformed = xyz @ rotation.T + translation
+            chunk["x"] = transformed[:, 0]
+            chunk["y"] = transformed[:, 1]
+            chunk["z"] = transformed[:, 2]
+            transformed_min = np.minimum(transformed_min, transformed.min(axis=0))
+            transformed_max = np.maximum(transformed_max, transformed.max(axis=0))
+            chunk.tofile(dst)
+            print(f"\rtransformed {end:,}/{vertex_count:,}", end="", flush=True)
+    print(f"\nsaved: {output_path}")
+
+    return {
+        "input": str(input_path),
+        "output": str(output_path),
+        "point_count": int(vertex_count),
+        "transformed_min": transformed_min.tolist(),
+        "transformed_max": transformed_max.tolist(),
+        "transformed_extent": (transformed_max - transformed_min).tolist(),
+    }
 
 
 def make_pcd(o3d: Any, points: np.ndarray, color=(0.7, 0.7, 0.7), colors: np.ndarray | None = None):
