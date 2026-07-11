@@ -47,8 +47,8 @@ def main() -> int:
         default=DEFAULT_ZUP_GAUSSIAN,
         help="Z-up 3DGS PLY file; default is the raw Erfeishan Gaussian",
     )
-    parser.add_argument("--width", type=int, default=960)
-    parser.add_argument("--height", type=int, default=540)
+    parser.add_argument("--width", type=int, default=1920)
+    parser.add_argument("--height", type=int, default=1080)
     parser.add_argument("--snapshot", action="store_true", help="Render one offscreen RGB image instead of opening the viewer")
     parser.add_argument("--output", type=Path, default=OUTPUTS_ERFEISHAN_DIR / "gaussian" / "snapshot.png")
     parser.add_argument("--viewer", type=Path, default=HABITAT_GS_VIEWER, help="Path to Habitat-GS gaussian_viewer.py")
