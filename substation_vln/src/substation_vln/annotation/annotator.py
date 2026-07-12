@@ -23,7 +23,7 @@ except ImportError:  # pragma: no cover - optional display enhancement
     ImageFont = None
 
 
-from substation_vln.annotation import (
+from .schema import (
     CATEGORIES,
     FONT_CANDIDATES,
     LABEL_COLORS_BGR,

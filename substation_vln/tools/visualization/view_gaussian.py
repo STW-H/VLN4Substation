@@ -9,16 +9,16 @@ import subprocess
 import sys
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 SRC_ROOT = PROJECT_ROOT / "substation_vln" / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from substation_vln.coordinate_transforms import (  # noqa: E402
+from substation_vln.preprocessing.coordinate_transforms import (  # noqa: E402
     ensure_gaussian_z_up_to_y_up_cache,
     transform_z_up_points_to_habitat_y_up,
 )
-from substation_vln.habitat_gs import render_gaussian_snapshot  # noqa: E402
+from substation_vln.visualization.habitat_gs import render_gaussian_snapshot  # noqa: E402
 from substation_vln.paths import (  # noqa: E402
     DEFAULT_ZUP_GAUSSIAN,
     HABITAT_GS_ROOT,

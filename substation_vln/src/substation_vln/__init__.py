@@ -5,16 +5,12 @@ The package contains reusable implementation code. Scripts under
 """
 
 __all__ = [
-    "coordinate_transforms",
     "geometry",
-    "habitat_gs",
     "interactive",
-    "las",
-    "ortho_image_annotator",
     "paths",
     "picking",
-    "pointcloud_io",
-    "registration",
+    "planning",
+    "preprocessing",
     "serialization",
     "visualization",
 ]

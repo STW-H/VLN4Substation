@@ -11,22 +11,22 @@ import sys
 import numpy as np
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 SRC_ROOT = PROJECT_ROOT / "substation_vln" / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from substation_vln.las import write_las_real_ply  # noqa: E402
+from substation_vln.preprocessing.las import write_las_real_ply  # noqa: E402
 from substation_vln.picking import pick_with_pause  # noqa: E402
 from substation_vln.paths import DEFAULT_PROCESSED_POINTCLOUD_DIR  # noqa: E402
-from substation_vln.pointcloud_io import (  # noqa: E402
+from substation_vln.preprocessing.pointcloud_io import (  # noqa: E402
     describe_pcd,
     import_open3d,
     load_las_as_pcd,
     transform_binary_ply_xyz,
 )
 from substation_vln.serialization import json_ready  # noqa: E402
-from substation_vln.visualization import (  # noqa: E402
+from substation_vln.visualization.pointcloud import (  # noqa: E402
     centered_display_pcd,
     crop_point_cloud,
     draw_point_cloud,

@@ -78,8 +78,8 @@ LAS 整数坐标
 当前工具：
 
 ```text
-substation_vln/tools/convert_las_to_real_ply.py
-substation_vln/tools/view_pointcloud.py --save-converted
+substation_vln/tools/preprocessing/convert_las_to_real_ply.py
+substation_vln/tools/visualization/view_pointcloud.py --save-converted
 ```
 
 转换后需要检查：
@@ -108,7 +108,7 @@ RGB 是否正常保留
 当前工具：
 
 ```text
-substation_vln/tools/view_gaussian.py
+substation_vln/tools/visualization/view_gaussian.py
 ```
 
 说明：Habitat-GS 内部仍使用 Y-up 坐标习惯。`view_gaussian.py` 会优先查找 `outputs/220kv_erfeishan/gaussian_yup_cache/` 中的缓存文件；若不存在或原始高斯更新，则重新生成。该缓存属于可视化输出，可以删除并自动重建；正式数据管理仍以 Z-up 原始高斯为基准。
@@ -133,7 +133,7 @@ substation_vln/tools/view_gaussian.py
 当前工具：
 
 ```text
-substation_vln/tools/register_gaussian_to_pointcloud.py
+substation_vln/tools/preprocessing/register_gaussian_to_pointcloud.py
 ```
 
 当前基准变换保存位置：
@@ -168,16 +168,36 @@ processed/gaussian/ 中对齐后的高斯点云
 
 ### 2.6 当前保留的工具脚本
 
-当前 `substation_vln/tools/` 只保留通用命令行入口：
+当前 `substation_vln/tools/` 按流程模块组织通用命令行入口：
 
 ```text
-convert_las_to_real_ply.py              # LAS/LAZ 转真实坐标 PLY
-view_pointcloud.py                      # 查看完整点云和普通点云
-view_gaussian.py                        # 使用 Habitat-GS 查看/渲染高斯
-register_gaussian_to_pointcloud.py      # Gaussian 到完整点云配准
+preprocessing/
+  convert_las_to_real_ply.py            # LAS/LAZ 转真实坐标 PLY
+  register_gaussian_to_pointcloud.py    # Gaussian 到完整点云配准
+  render_pointcloud_ortho_image.py      # 从点云生成标注用正射图
+
+annotation/
+  annotate_ortho_image.py               # 正射图标注
+  merge_annotation_files.py             # 多次标注结果合并
+
+visualization/
+  view_pointcloud.py                    # 查看完整点云和普通点云
+  view_gaussian.py                      # 使用 Habitat-GS 查看/渲染高斯
+
+planning/
+  # 后续进入规划地图和路径规划阶段时再添加脚本
 ```
 
 站点专用、一次性、可由官方工具替代的脚本不再放在 `tools/` 中。
+
+`src/substation_vln/` 中保存可复用实现代码，并按功能域组织：
+
+```text
+annotation/       # 标注数据结构与交互标注器
+preprocessing/    # 点云/高斯/坐标预处理基础函数
+visualization/    # 点云与高斯可视化基础函数
+planning/         # 路径规划算法，含 baseline A* 与 improved A*
+```
 
 ## 3. 预处理后的标注流程
 

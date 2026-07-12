@@ -12,13 +12,13 @@ import numpy as np
 from PIL import Image
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 SRC_ROOT = PROJECT_ROOT / "substation_vln" / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from substation_vln.paths import ANNOTATION_OUTPUTS_ERFEISHAN_DIR, DEFAULT_AXIS_CORRECTED_POINTCLOUD  # noqa: E402
-from substation_vln.pointcloud_io import binary_ply_dtype, parse_binary_ply_vertex  # noqa: E402
+from substation_vln.preprocessing.pointcloud_io import binary_ply_dtype, parse_binary_ply_vertex  # noqa: E402
 
 
 DEFAULT_OUTPUT = ANNOTATION_OUTPUTS_ERFEISHAN_DIR / "axis_corrected_pointcloud_ortho_8k.png"

@@ -29,8 +29,16 @@ substation_vln/docs/algorithm_overview.md
 ├── environment.yml                # 本项目工具依赖参考
 ├── external/                      # Habitat-GS / Habitat-Lab 等外部依赖，本地准备，不提交 Git
 ├── substation_vln/
-│   ├── src/substation_vln/         # 可复用 Python 模块
-│   ├── tools/                      # 命令行工具入口
+│   ├── src/substation_vln/         # 可复用 Python 模块，按功能域组织
+│   │   ├── preprocessing/          # 点云/高斯/坐标预处理基础函数
+│   │   ├── annotation/             # 标注数据结构与交互标注器
+│   │   ├── visualization/          # 点云与高斯可视化基础函数
+│   │   └── planning/               # 路径规划算法，含 A* 与改进 A*
+│   ├── tools/                      # 命令行工具入口，按流程模块分组
+│   │   ├── preprocessing/          # 点云/高斯预处理与配准
+│   │   ├── annotation/             # 标注与标注合并
+│   │   ├── visualization/          # 点云和高斯可视化
+│   │   └── planning/               # 路径规划入口，后续规划阶段添加脚本
 │   ├── docs/                       # 算法思路文档
 │   ├── configs/                    # 后续实验配置
 │   ├── data/                       # 本地数据目录，不提交 Git
@@ -158,14 +166,14 @@ substation_vln/data/processed/220kv_erfeishan/registration/gaussian_to_pointclou
 查看完整点云：
 
 ```bash
-python substation_vln/tools/view_pointcloud.py \
+python substation_vln/tools/visualization/view_pointcloud.py \
   substation_vln/data/processed/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled_real_coords.ply
 ```
 
 LAS 转真实坐标 PLY，并可选做坐标轴矫正：
 
 ```bash
-python substation_vln/tools/convert_las_to_real_ply.py \
+python substation_vln/tools/preprocessing/convert_las_to_real_ply.py \
   substation_vln/data/raw/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled.las \
   --axis-correct
 ```
@@ -173,20 +181,20 @@ python substation_vln/tools/convert_las_to_real_ply.py \
 查看 3D Gaussian 渲染：
 
 ```bash
-python substation_vln/tools/view_gaussian.py
+python substation_vln/tools/visualization/view_gaussian.py
 ```
 
 高斯点云注册到完整点云：
 
 ```bash
-python substation_vln/tools/register_gaussian_to_pointcloud.py \
+python substation_vln/tools/preprocessing/register_gaussian_to_pointcloud.py \
   --correspondences substation_vln/data/processed/220kv_erfeishan/registration/gaussian_to_pointcloud_transform.json
 ```
 
 重新手工选点配准：
 
 ```bash
-python substation_vln/tools/register_gaussian_to_pointcloud.py \
+python substation_vln/tools/preprocessing/register_gaussian_to_pointcloud.py \
   --num-points 6 \
   --pick-order gaussian-first
 ```
@@ -194,7 +202,7 @@ python substation_vln/tools/register_gaussian_to_pointcloud.py \
 预览 ICP 滤波效果：
 
 ```bash
-python substation_vln/tools/register_gaussian_to_pointcloud.py \
+python substation_vln/tools/preprocessing/register_gaussian_to_pointcloud.py \
   --preview-icp-filter substation_vln/data/processed/220kv_erfeishan/registration/gaussian_to_pointcloud_transform.json
 ```
 

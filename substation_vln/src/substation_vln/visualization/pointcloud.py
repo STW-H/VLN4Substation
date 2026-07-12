@@ -6,7 +6,7 @@ from typing import Any
 
 import numpy as np
 
-from .pointcloud_io import describe_pcd, make_pcd
+from ..preprocessing.pointcloud_io import describe_pcd, make_pcd
 
 
 DEFAULT_BACKGROUND = np.asarray([0.02, 0.02, 0.02])

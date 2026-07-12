@@ -17,7 +17,7 @@ from typing import Any
 import numpy as np
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 SRC_ROOT = PROJECT_ROOT / "substation_vln" / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
@@ -30,8 +30,8 @@ from substation_vln.paths import (  # noqa: E402
     DEFAULT_REGISTRATION,
 )
 from substation_vln.picking import pick_with_pause  # noqa: E402
-from substation_vln.pointcloud_io import import_open3d, make_pcd, sample_ply_points  # noqa: E402
-from substation_vln.registration import (  # noqa: E402
+from substation_vln.preprocessing.pointcloud_io import import_open3d, make_pcd, sample_ply_points  # noqa: E402
+from substation_vln.preprocessing.registration import (  # noqa: E402
     filter_gaussian_for_icp,
     filter_target_for_icp,
     load_correspondences,
@@ -39,7 +39,7 @@ from substation_vln.registration import (  # noqa: E402
     save_aligned_gaussian,
     save_transform,
 )
-from substation_vln.visualization import configure_default_camera, configure_visualizer, coordinate_frame_for_points  # noqa: E402
+from substation_vln.visualization.pointcloud import configure_default_camera, configure_visualizer, coordinate_frame_for_points  # noqa: E402
 
 
 def visualize_registration(o3d: Any, pointcloud_pcd, gaussian_pcd, final_matrix: np.ndarray) -> None:

@@ -8,7 +8,7 @@ from typing import Any
 
 import numpy as np
 
-from .geometry import transform_points
+from ..geometry import transform_points
 from .pointcloud_io import make_pcd, transform_binary_ply_xyz
 
 

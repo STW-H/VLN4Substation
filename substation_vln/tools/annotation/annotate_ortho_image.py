@@ -9,12 +9,12 @@ from pathlib import Path
 import sys
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 SRC_ROOT = PROJECT_ROOT / "substation_vln" / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from substation_vln.ortho_image_annotator import OrthoImageAnnotator  # noqa: E402
+from substation_vln.annotation.annotator import OrthoImageAnnotator  # noqa: E402
 from substation_vln.paths import ANNOTATION_OUTPUTS_ERFEISHAN_DIR  # noqa: E402
 
 
