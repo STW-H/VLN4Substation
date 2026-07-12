@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
 from pathlib import Path
 from typing import Any
@@ -10,40 +9,7 @@ from typing import Any
 import cv2
 import numpy as np
 
-
-@dataclass(frozen=True)
-class GridSpec:
-    min_x: float
-    max_x: float
-    min_y: float
-    max_y: float
-    resolution_m: float
-    width: int
-    height: int
-
-    def xy_to_grid(self, points_xy: np.ndarray) -> np.ndarray:
-        pts = np.asarray(points_xy, dtype=np.float64)
-        cols = np.floor((pts[:, 0] - self.min_x) / self.resolution_m).astype(np.int32)
-        rows = np.floor((self.max_y - pts[:, 1]) / self.resolution_m).astype(np.int32)
-        cols = np.clip(cols, 0, self.width - 1)
-        rows = np.clip(rows, 0, self.height - 1)
-        return np.stack([cols, rows], axis=1)
-
-    def grid_to_xy(self, cols: np.ndarray, rows: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        x = self.min_x + (np.asarray(cols, dtype=np.float64) + 0.5) * self.resolution_m
-        y = self.max_y - (np.asarray(rows, dtype=np.float64) + 0.5) * self.resolution_m
-        return x, y
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "min_x": self.min_x,
-            "max_x": self.max_x,
-            "min_y": self.min_y,
-            "max_y": self.max_y,
-            "resolution_m": self.resolution_m,
-            "width": self.width,
-            "height": self.height,
-        }
+from substation_vln.planning.common.grid import GridSpec
 
 
 def load_merged_annotations(path: Path) -> dict[str, Any]:
@@ -87,6 +53,14 @@ def draw_segment(mask: np.ndarray, grid: GridSpec, start_xy: list[float], end_xy
     cv2.line(mask, tuple(pts[0]), tuple(pts[1]), int(value), thickness=thickness, lineType=cv2.LINE_AA)
 
 
+def draw_polyline(mask: np.ndarray, grid: GridSpec, polyline_xy: list[list[float]], width_m: float, value: int = 1) -> None:
+    if len(polyline_xy) < 2:
+        return
+    pts = grid.xy_to_grid(np.asarray(polyline_xy, dtype=np.float64)).reshape((-1, 1, 2))
+    thickness = max(1, int(round(width_m / grid.resolution_m)))
+    cv2.polylines(mask, [pts], isClosed=False, color=int(value), thickness=thickness, lineType=cv2.LINE_AA)
+
+
 def fill_circle(mask: np.ndarray, grid: GridSpec, center_xy: list[float], radius_m: float, value: int = 1) -> None:
     center = grid.xy_to_grid(np.asarray([center_xy], dtype=np.float64))[0]
     radius_px = max(1, int(round(radius_m / grid.resolution_m)))
@@ -116,9 +90,15 @@ def build_base_masks(payload: dict[str, Any], grid: GridSpec, preferred_path_wid
         elif category == "preferred_road" and geometry_type == "multi_polygon":
             for polygon in annotation.get("polygons_xy", []):
                 fill_polygon(preferred_road_mask, grid, polygon)
-        elif category == "preferred_path" and geometry_type == "multi_directed_segment":
-            for segment in annotation.get("segments", []):
-                draw_segment(preferred_path_mask, grid, segment["start_xy"], segment["end_xy"], preferred_path_width_m)
+        elif category == "preferred_path":
+            if geometry_type == "multi_directed_segment":
+                for segment in annotation.get("segments", []):
+                    draw_segment(preferred_path_mask, grid, segment["start_xy"], segment["end_xy"], preferred_path_width_m)
+            elif geometry_type in ("multi_directed_polyline", "multi_polyline"):
+                for polyline in annotation.get("polylines", []):
+                    draw_polyline(preferred_path_mask, grid, polyline["polyline_xy"], preferred_path_width_m)
+            elif geometry_type in ("directed_polyline", "polyline"):
+                draw_polyline(preferred_path_mask, grid, annotation["polyline_xy"], preferred_path_width_m)
 
     boundary_mask = (boundary_mask > 0).astype(np.uint8)
     obstacle_mask = ((obstacle_mask > 0) & (boundary_mask > 0)).astype(np.uint8)

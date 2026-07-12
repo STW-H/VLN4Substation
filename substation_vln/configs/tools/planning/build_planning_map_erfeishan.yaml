@@ -2,12 +2,12 @@
 
 paths:
   annotation: substation_vln/outputs/220kv_erfeishan/annotation/annotations_merged.json
-  output_dir: substation_vln/outputs/220kv_erfeishan/planning
+  output_dir: substation_vln/outputs/220kv_erfeishan/planning/maps
 
 base_map:
-  resolution_m: 0.10
+  resolution_m: 0.05
   bounds_padding_m: 1.0
-  preferred_path_width_m: 0.8
+  preferred_path_width_m: 0.5
 
 derived_map:
   obstacle_inflation_radius_m: 0.4

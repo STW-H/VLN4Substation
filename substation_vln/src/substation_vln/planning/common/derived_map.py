@@ -22,6 +22,10 @@ def inflate_obstacles(obstacle_mask: np.ndarray, resolution_m: float, inflation_
 
 
 def preferred_path_attraction(preferred_path_mask: np.ndarray, resolution_m: float, sigma_m: float) -> tuple[np.ndarray, np.ndarray]:
+    if not np.any(preferred_path_mask > 0):
+        distance = np.full(preferred_path_mask.shape, np.inf, dtype=np.float32)
+        attraction = np.zeros(preferred_path_mask.shape, dtype=np.float32)
+        return distance, attraction
     distance = distance_to_mask(preferred_path_mask, resolution_m)
     if sigma_m <= 0:
         attraction = (preferred_path_mask > 0).astype(np.float32)

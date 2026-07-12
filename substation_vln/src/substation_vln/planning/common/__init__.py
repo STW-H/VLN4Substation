@@ -3,5 +3,6 @@
 __all__ = [
     "base_map",
     "derived_map",
+    "grid",
     "io",
 ]

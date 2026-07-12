@@ -220,6 +220,12 @@ python substation_vln/tools/planning/build_planning_map.py \
   --config substation_vln/configs/tools/planning/build_planning_map_erfeishan.yaml
 ```
 
+交互式测试 baseline A*：
+
+```bash
+python substation_vln/tools/planning/run_baseline_astar.py
+```
+
 每个 `tools` 脚本都有对应的默认 YAML 配置，统一放在：
 
 ```text
@@ -229,7 +235,13 @@ substation_vln/configs/tools/
 默认输出到：
 
 ```text
-substation_vln/outputs/220kv_erfeishan/planning/
+substation_vln/outputs/220kv_erfeishan/planning/maps/
+```
+
+baseline A* 测试结果默认输出到：
+
+```text
+substation_vln/outputs/220kv_erfeishan/planning/baseline_astar/
 ```
 
 ## Git Policy

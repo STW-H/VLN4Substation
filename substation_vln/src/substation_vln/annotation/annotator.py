@@ -46,6 +46,11 @@ OBSTACLE_SHAPE_OPTIONS = {
     "3": {"key": "circle", "name": "圆形", "geometry": "circle"},
 }
 
+PREFERRED_PATH_OPTIONS = {
+    "1": {"key": "directed", "name": "有向路径", "geometry": "directed_polyline"},
+    "2": {"key": "undirected", "name": "无向路径", "geometry": "polyline"},
+}
+
 
 def mouse_wheel_delta(flags: int) -> int:
     if hasattr(cv2, "getMouseWheelDelta"):
@@ -96,10 +101,8 @@ class OrthoImageAnnotator:
         self.closed_polygons: list[list[list[float]]] = []
         self.closed_directed_points: list[dict] = []
         self.closed_polylines: list[list[list[float]]] = []
-        self.closed_segments: list[dict] = []
         self.closed_circles: list[dict] = []
         self.shape_points: list[list[float]] = []
-        self.segment_start: list[float] | None = None
         self.patrol_points: list[list[float]] = []
         self.text_font = self.load_text_font()
         print(f"Initial display scale: {self.scale:.3f} image pixels per screen pixel")
@@ -224,6 +227,59 @@ class OrthoImageAnnotator:
             raise ValueError("Invalid pixel-to-world scale; cannot convert circle radius.")
         return float(radius_m / meters_per_pixel)
 
+    def horizontal_meters_per_image_pixel(self) -> float:
+        center = np.asarray([self.width * 0.5, self.height * 0.5], dtype=np.float64)
+        sample_xy = apply_homogeneous(
+            self.pixel_to_world,
+            np.asarray([center, center + np.asarray([1.0, 0.0])], dtype=np.float64),
+        )
+        meters_per_pixel = float(np.linalg.norm(sample_xy[1] - sample_xy[0]))
+        if meters_per_pixel <= 0:
+            raise ValueError("Invalid pixel-to-world scale; cannot draw scale bars.")
+        return meters_per_pixel
+
+    def draw_scale_bars(self, view: np.ndarray) -> None:
+        viewport_height, viewport_width = view.shape[:2]
+        meters_per_screen_pixel = self.horizontal_meters_per_image_pixel() * self.scale
+        candidate_distances_m = (0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0)
+        target_length_px = 130.0
+        min_length_px = 65.0
+        max_length_px = 180.0
+        fitting = [
+            (distance, distance / meters_per_screen_pixel)
+            for distance in candidate_distances_m
+            if min_length_px <= distance / meters_per_screen_pixel <= max_length_px
+        ]
+        if fitting:
+            distance_m, length_px = min(fitting, key=lambda item: abs(item[1] - target_length_px))
+        else:
+            distance_m, length_px = min(
+                ((distance, distance / meters_per_screen_pixel) for distance in candidate_distances_m),
+                key=lambda item: abs(item[1] - target_length_px),
+            )
+
+        panel_width = min(250, max(170, viewport_width - 24))
+        panel_height = 66
+        panel_right = viewport_width - 12
+        panel_left = max(12, panel_right - panel_width)
+        panel_bottom = viewport_height - 12
+        panel_top = max(12, panel_bottom - panel_height)
+        overlay = view.copy()
+        cv2.rectangle(overlay, (panel_left, panel_top), (panel_right, panel_bottom), (20, 20, 20), -1)
+        view[:] = cv2.addWeighted(overlay, 0.58, view, 0.42, 0.0)
+
+        left = panel_left + 18
+        y = panel_bottom - 20
+        right = min(panel_right - 18, left + max(1, int(round(length_px))))
+        label = f"{distance_m:g} m"
+        cv2.line(view, (left, y), (right, y), (0, 0, 0), 6, cv2.LINE_AA)
+        cv2.line(view, (left, y), (right, y), (255, 255, 255), 3, cv2.LINE_AA)
+        for x in (left, right):
+            cv2.line(view, (x, y - 7), (x, y + 7), (0, 0, 0), 5, cv2.LINE_AA)
+            cv2.line(view, (x, y - 7), (x, y + 7), (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(view, label, (left, panel_top + 22), cv2.FONT_HERSHEY_SIMPLEX, 0.56, (0, 0, 0), 3, cv2.LINE_AA)
+        cv2.putText(view, label, (left, panel_top + 22), cv2.FONT_HERSHEY_SIMPLEX, 0.56, (255, 255, 255), 1, cv2.LINE_AA)
+
     def mouse_callback(self, event, x, y, flags, param) -> None:
         category = self.active_category
         geometry = category["geometry"] if category else None
@@ -245,7 +301,7 @@ class OrthoImageAnnotator:
             self.close_current_polygon()
             return
 
-        if event == cv2.EVENT_RBUTTONDOWN and geometry == "directed_polyline":
+        if event == cv2.EVENT_RBUTTONDOWN and geometry in ("directed_polyline", "polyline"):
             self.close_current_polyline()
             return
 
@@ -310,30 +366,11 @@ class OrthoImageAnnotator:
             )
             return
 
-        if event == cv2.EVENT_LBUTTONDOWN and geometry == "directed_polyline":
+        if event == cv2.EVENT_LBUTTONDOWN and geometry in ("directed_polyline", "polyline"):
             point = list(self.screen_to_image(x, y))
             self.road_vertices.append(point)
             category_name = category["name"] if category else "polyline"
-            print(f"Added {category_name} waypoint #{len(self.road_vertices)}. Right-click to finish directed path.")
-            return
-
-        if event == cv2.EVENT_LBUTTONDOWN and geometry == "directed_segment":
-            point = list(self.screen_to_image(x, y))
-            if self.segment_start is None:
-                self.segment_start = point
-                print("Added preferred path segment start. Left-click another point to set segment direction.")
-                return
-
-            if np.linalg.norm(np.asarray(point) - np.asarray(self.segment_start)) < self.args.min_direction_pixel_length:
-                print("Ignored preferred path segment: endpoint is too close to start point.")
-                return
-
-            self.closed_segments.append({"start_pixel": self.segment_start, "end_pixel": point})
-            self.segment_start = None
-            print(
-                f"Completed preferred path segment #{len(self.closed_segments)}. "
-                "Press Enter to finish this annotation, or keep adding segments."
-            )
+            print(f"Added {category_name} waypoint #{len(self.road_vertices)}. Right-click to finish current path.")
             return
 
         return
@@ -385,44 +422,31 @@ class OrthoImageAnnotator:
 
     def close_current_polyline(self) -> None:
         if len(self.road_vertices) < 2:
-            print("Directed path needs at least 2 waypoints.")
+            print("Path needs at least 2 waypoints.")
             return
         polyline = [list(point) for point in self.road_vertices]
         if polyline_length(polyline) < self.args.min_direction_pixel_length:
-            print("Ignored tiny directed path.")
+            print("Ignored tiny path.")
             self.road_vertices = []
             return
         self.closed_polylines.append(polyline)
         self.road_vertices = []
-        print(f"Closed directed path #{len(self.closed_polylines)}. Press Enter to finish this annotation, or keep drawing another path.")
+        print(f"Closed path #{len(self.closed_polylines)}. Press Enter to finish this annotation, or keep drawing another path.")
 
     def finish_current_polylines(self) -> None:
         if self.road_vertices:
-            print("Current directed path is not finished. Right-click to finish it before pressing Enter.")
+            print("Current path is not finished. Right-click to finish it before pressing Enter.")
             return
         if not self.closed_polylines:
-            print("No closed directed path in current annotation.")
+            print("No closed path in current annotation.")
             return
+        is_directed = self.active_category and self.active_category["geometry"] == "directed_polyline"
         self.pending_annotation = {
-            "selection_type": "image_multi_directed_polyline",
-            "geometry_type": "multi_directed_polyline",
+            "selection_type": "image_multi_directed_polyline" if is_directed else "image_multi_polyline",
+            "geometry_type": "multi_directed_polyline" if is_directed else "multi_polyline",
             "polylines_pixel": [list(polyline) for polyline in self.closed_polylines],
         }
         self.closed_polylines = []
-
-    def finish_current_segments(self) -> None:
-        if self.segment_start is not None:
-            print("Current preferred path segment is incomplete. Left-click the endpoint before pressing Enter.")
-            return
-        if not self.closed_segments:
-            print("No completed preferred path segment in current annotation.")
-            return
-        self.pending_annotation = {
-            "selection_type": "image_multi_directed_segment",
-            "geometry_type": "multi_directed_segment",
-            "segments_pixel": [dict(item) for item in self.closed_segments],
-        }
-        self.closed_segments = []
 
     def finish_current_directed_points(self) -> None:
         if self.patrol_points:
@@ -476,11 +500,13 @@ class OrthoImageAnnotator:
                 for polyline in annotation["polylines"]:
                     pts = np.asarray([self.image_to_screen(c, r) for c, r in polyline["polyline_pixel"]], dtype=np.int32)
                     self.draw_directed_polyline(view, pts, color)
-            elif annotation["geometry_type"] == "directed_segment":
-                self.draw_directed_segment(view, annotation["start_pixel"], annotation["end_pixel"], color)
-            elif annotation["geometry_type"] == "multi_directed_segment":
-                for segment in annotation["segments"]:
-                    self.draw_directed_segment(view, segment["start_pixel"], segment["end_pixel"], color)
+            elif annotation["geometry_type"] == "polyline":
+                pts = np.asarray([self.image_to_screen(c, r) for c, r in annotation["polyline_pixel"]], dtype=np.int32)
+                self.draw_polyline(view, pts, color)
+            elif annotation["geometry_type"] == "multi_polyline":
+                for polyline in annotation["polylines"]:
+                    pts = np.asarray([self.image_to_screen(c, r) for c, r in polyline["polyline_pixel"]], dtype=np.int32)
+                    self.draw_polyline(view, pts, color)
             elif annotation["geometry_type"] == "multi_polygon":
                 for polygon in annotation["polygons_pixel"]:
                     pts = np.asarray([self.image_to_screen(c, r) for c, r in polygon], dtype=np.int32)
@@ -516,19 +542,18 @@ class OrthoImageAnnotator:
 
         for polyline in self.closed_polylines:
             pts = np.asarray([self.image_to_screen(c, r) for c, r in polyline], dtype=np.int32)
-            self.draw_directed_polyline(view, pts, (0, 255, 255))
-
-        for segment in self.closed_segments:
-            self.draw_directed_segment(view, segment["start_pixel"], segment["end_pixel"], (0, 255, 255))
-
-        if self.segment_start is not None:
-            start = self.image_to_screen(*self.segment_start)
-            cv2.circle(view, start, max(5, int(self.args.line_width * 3)), (0, 255, 255), thickness=-1)
+            if self.active_category and self.active_category["geometry"] == "polyline":
+                self.draw_polyline(view, pts, (0, 255, 255))
+            else:
+                self.draw_directed_polyline(view, pts, (0, 255, 255))
 
         if self.road_vertices:
             pts = np.asarray([self.image_to_screen(c, r) for c, r in self.road_vertices], dtype=np.int32)
-            if self.active_category and self.active_category["geometry"] == "directed_polyline":
-                self.draw_directed_polyline(view, pts, (0, 255, 255))
+            if self.active_category and self.active_category["geometry"] in ("directed_polyline", "polyline"):
+                if self.active_category["geometry"] == "polyline":
+                    self.draw_polyline(view, pts, (0, 255, 255))
+                else:
+                    self.draw_directed_polyline(view, pts, (0, 255, 255))
             else:
                 for point in pts:
                     cv2.circle(view, tuple(point), max(4, int(self.args.line_width * 2)), (0, 255, 255), thickness=-1)
@@ -556,14 +581,15 @@ class OrthoImageAnnotator:
             self.draw_pending_annotation(view)
 
         self.draw_annotation_labels(view)
+        self.draw_scale_bars(view)
 
         category_name = self.active_category["key"] if self.active_category else "none"
         if self.active_category and self.active_category["geometry"] == "directed_point":
             tool_hint = "Left: stop+direction | Enter: finish | W/A/S/D: pan"
         elif self.active_category and self.active_category["geometry"] == "directed_polyline":
             tool_hint = "Left: waypoint | Right-click: close path | Enter: finish | W/A/S/D: pan"
-        elif self.active_category and self.active_category["geometry"] == "directed_segment":
-            tool_hint = "Left: segment start/end | Enter: finish | W/A/S/D: pan"
+        elif self.active_category and self.active_category["geometry"] == "polyline":
+            tool_hint = "Left: waypoint | Right-click: close path | Enter: finish | W/A/S/D: pan"
         elif self.active_category and self.active_category["geometry"] == "polygon":
             tool_hint = "Left: vertex | Right-click: close | Enter: finish | W/A/S/D: pan"
         elif self.active_category and self.active_category["geometry"] == "rectangle":
@@ -624,11 +650,13 @@ class OrthoImageAnnotator:
             for polyline in pending["polylines_pixel"]:
                 pts = np.asarray([self.image_to_screen(c, r) for c, r in polyline], dtype=np.int32)
                 self.draw_directed_polyline(view, pts, color)
-        elif pending["geometry_type"] == "directed_segment":
-            self.draw_directed_segment(view, pending["start_pixel"], pending["end_pixel"], color)
-        elif pending["geometry_type"] == "multi_directed_segment":
-            for segment in pending["segments_pixel"]:
-                self.draw_directed_segment(view, segment["start_pixel"], segment["end_pixel"], color)
+        elif pending["geometry_type"] == "polyline":
+            pts = np.asarray([self.image_to_screen(c, r) for c, r in pending["polyline_pixel"]], dtype=np.int32)
+            self.draw_polyline(view, pts, color)
+        elif pending["geometry_type"] == "multi_polyline":
+            for polyline in pending["polylines_pixel"]:
+                pts = np.asarray([self.image_to_screen(c, r) for c, r in polyline], dtype=np.int32)
+                self.draw_polyline(view, pts, color)
         elif pending["geometry_type"] == "multi_polygon":
             for polygon in pending["polygons_pixel"]:
                 pts = np.asarray([self.image_to_screen(c, r) for c, r in polygon], dtype=np.int32)
@@ -660,11 +688,13 @@ class OrthoImageAnnotator:
         end = tuple(pts[-1])
         cv2.arrowedLine(view, start, end, color, thickness=max(2, int(self.args.line_width)), tipLength=0.25)
 
-    def draw_directed_segment(self, view: np.ndarray, start_pixel: list[float], end_pixel: list[float], color: tuple[int, int, int]) -> None:
-        start = self.image_to_screen(*start_pixel)
-        end = self.image_to_screen(*end_pixel)
-        cv2.arrowedLine(view, start, end, color, thickness=max(2, int(self.args.line_width)), tipLength=0.25)
-        cv2.circle(view, start, max(4, int(self.args.line_width * 2)), color, thickness=-1)
+    def draw_polyline(self, view: np.ndarray, pts: np.ndarray, color: tuple[int, int, int]) -> None:
+        if len(pts) == 0:
+            return
+        for point in pts:
+            cv2.circle(view, tuple(point), max(3, int(self.args.line_width * 2)), color, thickness=-1)
+        if len(pts) >= 2:
+            cv2.polylines(view, [pts], isClosed=False, color=color, thickness=max(2, int(self.args.line_width)))
 
     def draw_circle(
         self,
@@ -712,16 +742,14 @@ class OrthoImageAnnotator:
                 pts = np.asarray(first["polyline_pixel"], dtype=np.float64)
                 mid = pts[len(pts) // 2]
                 position = self.image_to_screen(float(mid[0]), float(mid[1]))
-            elif annotation["geometry_type"] == "directed_segment":
-                start = np.asarray(annotation["start_pixel"], dtype=np.float64)
-                end = np.asarray(annotation["end_pixel"], dtype=np.float64)
-                mid = (start + end) * 0.5
+            elif annotation["geometry_type"] == "polyline":
+                pts = np.asarray(annotation["polyline_pixel"], dtype=np.float64)
+                mid = pts[len(pts) // 2]
                 position = self.image_to_screen(float(mid[0]), float(mid[1]))
-            elif annotation["geometry_type"] == "multi_directed_segment":
-                first = annotation["segments"][0]
-                start = np.asarray(first["start_pixel"], dtype=np.float64)
-                end = np.asarray(first["end_pixel"], dtype=np.float64)
-                mid = (start + end) * 0.5
+            elif annotation["geometry_type"] == "multi_polyline":
+                first = annotation["polylines"][0]
+                pts = np.asarray(first["polyline_pixel"], dtype=np.float64)
+                mid = pts[len(pts) // 2]
                 position = self.image_to_screen(float(mid[0]), float(mid[1]))
             elif annotation["geometry_type"] == "multi_polygon":
                 pts = np.asarray([point for polygon in annotation["polygons_pixel"] for point in polygon], dtype=np.float64)
@@ -870,12 +898,12 @@ class OrthoImageAnnotator:
                 f"Pending annotation #{annotation_id}: "
                 f"category={category['key']}, label={label}, count={annotation['count']}, length_xy={annotation['length_xy']:.3f}"
             )
-        elif annotation["geometry_type"] == "directed_segment":
+        elif annotation["geometry_type"] == "polyline":
             print(
                 f"Pending annotation #{annotation_id}: "
                 f"category={category['key']}, label={label}, length_xy={annotation['length_xy']:.3f}"
             )
-        elif annotation["geometry_type"] == "multi_directed_segment":
+        elif annotation["geometry_type"] == "multi_polyline":
             print(
                 f"Pending annotation #{annotation_id}: "
                 f"category={category['key']}, label={label}, count={annotation['count']}, length_xy={annotation['length_xy']:.3f}"
@@ -905,11 +933,6 @@ class OrthoImageAnnotator:
         return ask_yes_no("确认保存该标注结果？", default=True)
 
     def undo(self) -> None:
-        if self.segment_start is not None:
-            removed = self.segment_start
-            self.segment_start = None
-            print(f"Removed current preferred path segment start: {removed}")
-            return
         if self.patrol_points:
             removed = self.patrol_points.pop()
             print(f"Removed current patrol point: {removed}")
@@ -924,11 +947,7 @@ class OrthoImageAnnotator:
             return
         if self.closed_polylines:
             removed = self.closed_polylines.pop()
-            print(f"Removed directed path with {len(removed)} waypoints from current annotation.")
-            return
-        if self.closed_segments:
-            removed = self.closed_segments.pop()
-            print(f"Removed preferred path segment: {removed}")
+            print(f"Removed path with {len(removed)} waypoints from current annotation.")
             return
         if self.closed_directed_points:
             removed = self.closed_directed_points.pop()
@@ -960,6 +979,7 @@ class OrthoImageAnnotator:
             "image_size": {"width": int(self.width), "height": int(self.height)},
             "categories": CATEGORIES,
             "obstacle_shape_options": OBSTACLE_SHAPE_OPTIONS,
+            "preferred_path_options": PREFERRED_PATH_OPTIONS,
             "annotations": self.annotations,
         }
         self.output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -992,11 +1012,13 @@ class OrthoImageAnnotator:
                 for polyline in annotation["polylines"]:
                     pts = np.asarray(polyline["polyline_pixel"], dtype=np.int32)
                     self.draw_directed_polyline(review, pts, color)
-            elif annotation["geometry_type"] == "directed_segment":
-                self.draw_review_directed_segment(review, annotation["start_pixel"], annotation["end_pixel"], color)
-            elif annotation["geometry_type"] == "multi_directed_segment":
-                for segment in annotation["segments"]:
-                    self.draw_review_directed_segment(review, segment["start_pixel"], segment["end_pixel"], color)
+            elif annotation["geometry_type"] == "polyline":
+                pts = np.asarray(annotation["polyline_pixel"], dtype=np.int32)
+                self.draw_polyline(review, pts, color)
+            elif annotation["geometry_type"] == "multi_polyline":
+                for polyline in annotation["polylines"]:
+                    pts = np.asarray(polyline["polyline_pixel"], dtype=np.int32)
+                    self.draw_polyline(review, pts, color)
             elif annotation["geometry_type"] == "multi_polygon":
                 for polygon in annotation["polygons_pixel"]:
                     pts = np.asarray(polygon, dtype=np.int32)
@@ -1016,12 +1038,6 @@ class OrthoImageAnnotator:
         self.review_path.parent.mkdir(parents=True, exist_ok=True)
         cv2.imwrite(str(self.review_path), review)
         print(f"Saved review image: {self.review_path}")
-
-    def draw_review_directed_segment(self, image: np.ndarray, start_pixel: list[float], end_pixel: list[float], color: tuple[int, int, int]) -> None:
-        start = tuple(np.asarray(start_pixel, dtype=np.int32))
-        end = tuple(np.asarray(end_pixel, dtype=np.int32))
-        cv2.arrowedLine(image, start, end, color, thickness=max(4, int(self.args.line_width * 2)), tipLength=0.25)
-        cv2.circle(image, start, max(10, int(self.args.line_width * 5)), color, thickness=-1)
 
     def draw_review_circle(self, image: np.ndarray, center_pixel: list[float], radius_pixel: float, color: tuple[int, int, int]) -> None:
         center = tuple(np.asarray(center_pixel, dtype=np.int32))
@@ -1046,7 +1062,22 @@ class OrthoImageAnnotator:
             options=self.available_categories(),
             quit_label="完成标注并退出",
         )
-        if category is None or category["key"] != "obstacle":
+        if category is None:
+            return category
+        if category["key"] == "preferred_path":
+            path_type = choose_numbered_option(
+                prompt="请选择优先路径标注方式",
+                options=PREFERRED_PATH_OPTIONS,
+                quit_label="返回标注类型选择",
+            )
+            if path_type is None:
+                return self.choose_category()
+            path_category = dict(category)
+            path_category["geometry"] = path_type["geometry"]
+            path_category["path_type"] = path_type["key"]
+            path_category["path_type_name"] = path_type["name"]
+            return path_category
+        if category["key"] != "obstacle":
             return category
 
         shape = choose_numbered_option(
@@ -1080,14 +1111,10 @@ class OrthoImageAnnotator:
             print("  Left-click: first point is patrol stop")
             print("  Left-click again: second point sets viewing direction")
             print("  Enter: finish this annotation after at least one patrol point is completed")
-        elif category["geometry"] == "directed_polyline":
+        elif category["geometry"] in ("directed_polyline", "polyline"):
             print(f"  Left-click: add {category['name']} waypoint")
-            print(f"  Right-click: close current {category['name']} directed path")
+            print(f"  Right-click: finish current {category['name']} path")
             print("  Enter: finish this annotation after at least one path is closed")
-        elif category["geometry"] == "directed_segment":
-            print(f"  Left-click: first point is {category['name']} segment start")
-            print(f"  Left-click again: second point is {category['name']} segment end")
-            print("  Enter: finish this annotation after at least one segment is completed")
         elif category["geometry"] == "polygon":
             print(f"  Left-click: add {category['name']} polygon vertex")
             print(f"  Right-click: close current {category['name']} polygon")
@@ -1107,13 +1134,12 @@ class OrthoImageAnnotator:
         self.closed_polygons = []
         self.closed_directed_points = []
         self.closed_polylines = []
-        self.closed_segments = []
         self.closed_circles = []
         self.shape_points = []
-        self.segment_start = None
         self.patrol_points = []
         shape_text = f", shape={category['shape_name']}" if category.get("shape_name") else ""
-        print(f"\nCurrent category: {category['name']} ({category['key']}{shape_text})")
+        path_text = f", path_type={category['path_type_name']}" if category.get("path_type_name") else ""
+        print(f"\nCurrent category: {category['name']} ({category['key']}{shape_text}{path_text})")
         self.print_controls()
 
     def run_annotation_window(self) -> str:
@@ -1167,20 +1193,16 @@ class OrthoImageAnnotator:
                         self.finish_current_circles()
                     elif self.active_category["geometry"] == "directed_point":
                         self.finish_current_directed_points()
-                    elif self.active_category["geometry"] == "directed_polyline":
+                    elif self.active_category["geometry"] in ("directed_polyline", "polyline"):
                         self.finish_current_polylines()
-                    elif self.active_category["geometry"] == "directed_segment":
-                        self.finish_current_segments()
             elif key == 27:
                 self.pending_annotation = None
                 self.road_vertices = []
                 self.closed_polygons = []
                 self.closed_directed_points = []
                 self.closed_polylines = []
-                self.closed_segments = []
                 self.closed_circles = []
                 self.shape_points = []
-                self.segment_start = None
                 self.patrol_points = []
             elif key in (ord("q"), ord("Q")):
                 return "quit"

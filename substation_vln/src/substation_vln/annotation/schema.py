@@ -12,7 +12,7 @@ CATEGORIES = {
     "2": {"key": "patrol_point", "name": "巡视点位", "default_label": "patrol_point", "geometry": "directed_point"},
     "3": {"key": "preferred_road", "name": "优先通过区", "default_label": "preferred_road", "geometry": "polygon"},
     "4": {"key": "planning_boundary", "name": "规划边界", "default_label": "planning_boundary", "geometry": "polygon", "single": True},
-    "5": {"key": "preferred_path", "name": "优先路径", "default_label": "preferred_path", "geometry": "directed_segment"},
+    "5": {"key": "preferred_path", "name": "优先路径", "default_label": "preferred_path", "geometry": "directed_polyline"},
 }
 
 LABEL_COLORS_BGR = [
@@ -102,6 +102,9 @@ def make_annotation(
     if "shape" in category:
         annotation["shape"] = category["shape"]
         annotation["shape_name"] = category.get("shape_name", category["shape"])
+    if "path_type" in category:
+        annotation["path_type"] = category["path_type"]
+        annotation["path_type_name"] = category.get("path_type_name", category["path_type"])
 
     if pending["geometry_type"] == "directed_point":
         add_directed_point_fields(annotation, pending, pixel_to_world)
@@ -111,10 +114,10 @@ def make_annotation(
         add_directed_polyline_fields(annotation, pending, pixel_to_world)
     elif pending["geometry_type"] == "multi_directed_polyline":
         add_multi_directed_polyline_fields(annotation, pending, pixel_to_world)
-    elif pending["geometry_type"] == "directed_segment":
-        add_directed_segment_fields(annotation, pending, pixel_to_world)
-    elif pending["geometry_type"] == "multi_directed_segment":
-        add_multi_directed_segment_fields(annotation, pending, pixel_to_world)
+    elif pending["geometry_type"] == "polyline":
+        add_polyline_fields(annotation, pending, pixel_to_world)
+    elif pending["geometry_type"] == "multi_polyline":
+        add_multi_polyline_fields(annotation, pending, pixel_to_world)
     elif pending["geometry_type"] == "multi_polygon":
         add_multi_polygon_fields(annotation, pending, pixel_to_world)
     elif pending["geometry_type"] == "multi_circle":
@@ -259,63 +262,49 @@ def add_multi_directed_polyline_fields(annotation: dict, pending: dict, pixel_to
     )
 
 
-def directed_segment_record(start_pixel: list[float], end_pixel: list[float], pixel_to_world: np.ndarray) -> dict:
-    start_xy, end_xy = apply_homogeneous(
-        pixel_to_world,
-        np.asarray([start_pixel, end_pixel], dtype=np.float64),
-    ).tolist()
-    direction_pixel_arr = np.asarray(end_pixel, dtype=np.float64) - np.asarray(start_pixel, dtype=np.float64)
-    direction_xy_arr = np.asarray(end_xy, dtype=np.float64) - np.asarray(start_xy, dtype=np.float64)
-    pixel_norm = float(np.linalg.norm(direction_pixel_arr))
-    xy_norm = float(np.linalg.norm(direction_xy_arr))
-    direction_xy_unit = (direction_xy_arr / xy_norm).tolist() if xy_norm > 0 else [0.0, 0.0]
-    yaw_rad = float(np.arctan2(direction_xy_arr[1], direction_xy_arr[0])) if xy_norm > 0 else 0.0
+def add_polyline_fields(annotation: dict, pending: dict, pixel_to_world: np.ndarray) -> None:
+    polyline_pixel = pending["polyline_pixel"]
+    polyline_xy = apply_homogeneous(pixel_to_world, np.asarray(polyline_pixel, dtype=np.float64)).tolist()
+    annotation.update(
+        {
+            "polyline_pixel": polyline_pixel,
+            "polyline_xy": polyline_xy,
+            "length_pixel": polyline_length(polyline_pixel),
+            "length_xy": polyline_length(polyline_xy),
+            "bbox_pixel": bounds(polyline_pixel),
+            "bbox_xy": bounds(polyline_xy),
+        }
+    )
+
+
+def polyline_record(polyline_pixel: list[list[float]], pixel_to_world: np.ndarray) -> dict:
+    polyline_xy = apply_homogeneous(pixel_to_world, np.asarray(polyline_pixel, dtype=np.float64)).tolist()
     return {
-        "start_pixel": start_pixel,
-        "end_pixel": end_pixel,
-        "start_xy": start_xy,
-        "end_xy": end_xy,
-        "direction_pixel": direction_pixel_arr.tolist(),
-        "direction_xy": direction_xy_arr.tolist(),
-        "direction_xy_unit": direction_xy_unit,
-        "yaw_rad": yaw_rad,
-        "yaw_deg": float(np.degrees(yaw_rad)),
-        "length_pixel": pixel_norm,
-        "length_xy": xy_norm,
+        "polyline_pixel": polyline_pixel,
+        "polyline_xy": polyline_xy,
+        "length_pixel": polyline_length(polyline_pixel),
+        "length_xy": polyline_length(polyline_xy),
+        "bbox_pixel": bounds(polyline_pixel),
+        "bbox_xy": bounds(polyline_xy),
     }
 
 
-def add_directed_segment_fields(annotation: dict, pending: dict, pixel_to_world: np.ndarray) -> None:
-    segment = directed_segment_record(pending["start_pixel"], pending["end_pixel"], pixel_to_world)
-    annotation.update(segment)
+def add_multi_polyline_fields(annotation: dict, pending: dict, pixel_to_world: np.ndarray) -> None:
+    polylines_pixel = pending["polylines_pixel"]
+    polylines = [polyline_record(polyline, pixel_to_world) for polyline in polylines_pixel]
+    flat_pixel = [point for polyline in polylines_pixel for point in polyline]
+    flat_xy = [point for polyline in polylines for point in polyline["polyline_xy"]]
     annotation.update(
         {
-            "bbox_pixel": bounds([segment["start_pixel"], segment["end_pixel"]]),
-            "bbox_xy": bounds([segment["start_xy"], segment["end_xy"]]),
-        }
-    )
-
-
-def add_multi_directed_segment_fields(annotation: dict, pending: dict, pixel_to_world: np.ndarray) -> None:
-    segments_pixel = pending["segments_pixel"]
-    segments = [
-        directed_segment_record(item["start_pixel"], item["end_pixel"], pixel_to_world)
-        for item in segments_pixel
-    ]
-    flat_pixel = [point for item in segments_pixel for point in (item["start_pixel"], item["end_pixel"])]
-    flat_xy = [point for item in segments for point in (item["start_xy"], item["end_xy"])]
-    annotation.update(
-        {
-            "segments_pixel": segments_pixel,
-            "segments": segments,
+            "polylines_pixel": polylines_pixel,
+            "polylines": polylines,
             "bbox_pixel": bounds(flat_pixel),
             "bbox_xy": bounds(flat_xy),
-            "length_pixel": float(sum(segment["length_pixel"] for segment in segments)),
-            "length_xy": float(sum(segment["length_xy"] for segment in segments)),
-            "count": len(segments),
+            "length_pixel": float(sum(polyline["length_pixel"] for polyline in polylines)),
+            "length_xy": float(sum(polyline["length_xy"] for polyline in polylines)),
+            "count": len(polylines),
         }
     )
-
 
 def add_polygon_fields(annotation: dict, pending: dict, pixel_to_world: np.ndarray) -> None:
     polygon_pixel = pending["polygon_pixel"]

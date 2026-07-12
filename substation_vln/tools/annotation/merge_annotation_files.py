@@ -118,6 +118,7 @@ def merge_annotations(files: list[Path]) -> dict:
         "image_size": base_payload.get("image_size"),
         "categories": base_payload.get("categories"),
         "obstacle_shape_options": base_payload.get("obstacle_shape_options"),
+        "preferred_path_options": base_payload.get("preferred_path_options"),
         "label_translation_map": LABEL_TRANSLATIONS,
         "translation_review_required": review_required,
         "annotations": merged_annotations,
@@ -161,6 +162,19 @@ def draw_small_arrow(image: np.ndarray, start_pixel: list[float], end_pixel: lis
     )
 
 
+def draw_polyline(image: np.ndarray, polyline_pixel: list[list[float]], color: tuple[int, int, int], *, directed: bool) -> None:
+    pts = np.asarray(polyline_pixel, dtype=np.int32)
+    if len(pts) == 0:
+        return
+    for point in pts:
+        cv2.circle(image, tuple(point), 5, color, thickness=-1, lineType=cv2.LINE_AA)
+    if len(pts) < 2:
+        return
+    cv2.polylines(image, [pts], isClosed=False, color=color, thickness=3, lineType=cv2.LINE_AA)
+    if directed:
+        draw_small_arrow(image, pts[-2].tolist(), pts[-1].tolist(), color)
+
+
 def draw_label(image: np.ndarray, text: str, position: tuple[int, int], color: tuple[int, int, int]) -> None:
     x, y = position
     cv2.putText(image, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.62, (255, 255, 255), 4, cv2.LINE_AA)
@@ -182,6 +196,11 @@ def annotation_label_position(annotation: dict) -> tuple[int, int] | None:
         start = np.asarray(segment["start_pixel"], dtype=np.float64)
         end = np.asarray(segment["end_pixel"], dtype=np.float64)
         return tuple(((start + end) * 0.5).astype(np.int32))
+    if geometry_type in ("multi_directed_polyline", "multi_polyline") and annotation.get("polylines"):
+        first = annotation["polylines"][0]
+        points = np.asarray(first["polyline_pixel"], dtype=np.float64)
+        mid = points[len(points) // 2]
+        return tuple(mid.astype(np.int32))
     if geometry_type == "multi_directed_point" and annotation.get("directed_points"):
         stop = annotation["directed_points"][0]["stop_pixel"]
         return int(stop[0] + 10), int(stop[1] - 10)
@@ -212,6 +231,12 @@ def draw_review(image_path: Path, merged_payload: dict, review_path: Path) -> No
         elif geometry_type == "multi_directed_segment":
             for segment in annotation.get("segments", []):
                 draw_small_arrow(image, segment["start_pixel"], segment["end_pixel"], color)
+        elif geometry_type == "multi_directed_polyline":
+            for polyline in annotation.get("polylines", []):
+                draw_polyline(image, polyline["polyline_pixel"], color, directed=True)
+        elif geometry_type == "multi_polyline":
+            for polyline in annotation.get("polylines", []):
+                draw_polyline(image, polyline["polyline_pixel"], color, directed=False)
         elif geometry_type == "multi_directed_point":
             for point in annotation.get("directed_points", []):
                 stop = tuple(np.asarray(point["stop_pixel"], dtype=np.int32))

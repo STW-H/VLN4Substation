@@ -1,0 +1,20 @@
+# Default arguments for tools/planning/run_baseline_astar.py
+
+paths:
+  planning_map: substation_vln/outputs/220kv_erfeishan/planning/maps/planning_map.npz
+  metadata: substation_vln/outputs/220kv_erfeishan/planning/maps/planning_map_metadata.json
+  patrol_points: substation_vln/outputs/220kv_erfeishan/planning/maps/patrol_points.json
+  output_dir: substation_vln/outputs/220kv_erfeishan/planning/baseline_astar
+
+astar:
+  connectivity: 8
+  cost_weight: 1.0
+  heuristic_weight: 1.0
+  min_traversal_cost: 0.000001
+
+display:
+  window_name: Baseline A* start selection
+  max_window_width: 1400
+  max_window_height: 1000
+  path_line_width: 3
+  point_radius: 5

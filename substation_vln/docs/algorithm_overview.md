@@ -370,6 +370,7 @@ resolution_m 控制栅格地图分辨率
 
 ```text
 substation_vln/tools/planning/build_planning_map.py
+substation_vln/tools/planning/run_baseline_astar.py
 ```
 
 运行命令：
@@ -382,7 +383,7 @@ python substation_vln/tools/planning/build_planning_map.py \
 默认输出：
 
 ```text
-substation_vln/outputs/220kv_erfeishan/planning/
+substation_vln/outputs/220kv_erfeishan/planning/maps/
 ├── planning_map.npz
 ├── planning_map_metadata.json
 ├── patrol_points.json
@@ -412,6 +413,29 @@ preferred_path_attraction
 distance_to_preferred_path_m
 distance_to_obstacle_m
 preferred_road_mask
+```
+
+baseline A* 的第一版交互测试流程为：
+
+```text
+1. 打开规划地图窗口
+2. 鼠标左键点击起始点
+3. 在命令行选择目标巡视点编号
+4. A* 在 free_space_mask 内搜索路径
+5. 保存路径 JSON 和路径叠加图
+6. 显示规划结果
+```
+
+当前 baseline A* 配置：
+
+```text
+substation_vln/configs/tools/planning/run_baseline_astar_erfeishan.yaml
+```
+
+默认输出：
+
+```text
+substation_vln/outputs/220kv_erfeishan/planning/baseline_astar/
 ```
 
 ## 5. 后续工作
