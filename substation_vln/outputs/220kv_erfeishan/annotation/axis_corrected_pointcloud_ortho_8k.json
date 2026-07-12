@@ -1,0 +1,78 @@
+{
+  "input_pointcloud": "/home/he/VLN/substation_vln/data/processed/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled_real_coords_axis_corrected.ply",
+  "output_image": "/home/he/VLN/substation_vln/outputs/220kv_erfeishan/annotation/axis_corrected_pointcloud_ortho_8k.png",
+  "image_size": {
+    "width": 8246,
+    "height": 8192
+  },
+  "camera": {
+    "projection": "orthographic",
+    "camera_side": "zplus",
+    "view_direction": "Z-",
+    "screen_x_axis": "pointcloud_X",
+    "screen_y_axis": "pointcloud_Y"
+  },
+  "pointcloud_bounds": {
+    "min": [
+      519036.08207638183,
+      3344502.3753374508,
+      -0.5833494204657654
+    ],
+    "max": [
+      519230.0424946844,
+      3344695.0575866215,
+      30.847405686584125
+    ],
+    "extent": [
+      193.9604183025658,
+      192.68224917072803,
+      31.43075510704989
+    ]
+  },
+  "orthographic_bounds": {
+    "x_min": 519034.08207638183,
+    "x_max": 519232.0424946844,
+    "y_min": 3344500.3753374508,
+    "y_max": 3344697.0575866215,
+    "margin": 2.0
+  },
+  "pixel_to_world_matrix": [
+    [
+      0.024009753584301494,
+      0.0,
+      519034.08207638183
+    ],
+    [
+      0.0,
+      -0.0240119947711791,
+      3344697.0575866215
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "world_to_pixel_matrix": [
+    [
+      41.64974023947662,
+      0.0,
+      -21617634.693916492
+    ],
+    [
+      -0.0,
+      -41.64585281353929,
+      139292761.36613038
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "pixel_coordinate": "Use homogeneous [col, row, 1]. pixel_to_world gives [x, y, 1].",
+  "render_style": {
+    "point_radius_pixels": 0,
+    "note": "Point expansion only changes image appearance; coordinate mapping remains pixel-center based."
+  }
+}
