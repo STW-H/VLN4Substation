@@ -1,0 +1,102 @@
+{
+  "built_at": "2026-07-12T13:16:09",
+  "config": "/home/he/VLN/substation_vln/configs/tools/planning/build_planning_map_erfeishan.yaml",
+  "annotation": "/home/he/VLN/substation_vln/outputs/220kv_erfeishan/annotation/annotations_merged.json",
+  "grid": {
+    "min_x": 522046.089545512,
+    "max_x": 522208.8199832994,
+    "min_y": 3344064.7154777814,
+    "max_y": 3344194.748214182,
+    "resolution_m": 0.05,
+    "width": 3255,
+    "height": 2601
+  },
+  "base_map": {
+    "resolution_m": 0.05,
+    "bounds_padding_m": 1.0,
+    "preferred_path_width_m": 0.5
+  },
+  "derived_map": {
+    "obstacle_inflation_radius_m": 0.4,
+    "preferred_path_sigma_m": 1.5,
+    "obstacle_repulsion_radius_m": 1.0,
+    "obstacle_repulsion_weight": 0.8,
+    "base_cost": 1.0,
+    "preferred_road_cost": 0.6,
+    "preferred_path_alpha": 0.3,
+    "min_cost": 0.2
+  },
+  "outputs": {
+    "npz": "/home/he/VLN/substation_vln/outputs/220kv_erfeishan/planning/maps/planning_map.npz",
+    "metadata": "/home/he/VLN/substation_vln/outputs/220kv_erfeishan/planning/maps/planning_map_metadata.json",
+    "patrol_points": "/home/he/VLN/substation_vln/outputs/220kv_erfeishan/planning/maps/patrol_points.json",
+    "boundary_mask_png": "/home/he/VLN/substation_vln/outputs/220kv_erfeishan/planning/maps/boundary_mask.png",
+    "obstacle_mask_png": "/home/he/VLN/substation_vln/outputs/220kv_erfeishan/planning/maps/obstacle_mask.png",
+    "inflated_obstacle_mask_png": "/home/he/VLN/substation_vln/outputs/220kv_erfeishan/planning/maps/inflated_obstacle_mask.png",
+    "free_space_mask_png": "/home/he/VLN/substation_vln/outputs/220kv_erfeishan/planning/maps/free_space_mask.png",
+    "preferred_road_mask_png": "/home/he/VLN/substation_vln/outputs/220kv_erfeishan/planning/maps/preferred_road_mask.png",
+    "preferred_path_mask_png": "/home/he/VLN/substation_vln/outputs/220kv_erfeishan/planning/maps/preferred_path_mask.png",
+    "cost_map_png": "/home/he/VLN/substation_vln/outputs/220kv_erfeishan/planning/maps/cost_map.png",
+    "planning_overlay_png": "/home/he/VLN/substation_vln/outputs/220kv_erfeishan/planning/maps/planning_overlay.png"
+  },
+  "annotation_source_files": [
+    {
+      "index": 1,
+      "path": "/home/he/VLN/substation_vln/outputs/220kv_erfeishan/annotation/annotation_20260711_204534.json",
+      "file": "annotation_20260711_204534.json",
+      "saved_at": "2026-07-11T21:00:53",
+      "annotation_count": 2
+    },
+    {
+      "index": 2,
+      "path": "/home/he/VLN/substation_vln/outputs/220kv_erfeishan/annotation/annotation_20260711_211029.json",
+      "file": "annotation_20260711_211029.json",
+      "saved_at": "2026-07-11T21:14:50",
+      "annotation_count": 4
+    },
+    {
+      "index": 3,
+      "path": "/home/he/VLN/substation_vln/outputs/220kv_erfeishan/annotation/annotation_20260711_215946.json",
+      "file": "annotation_20260711_215946.json",
+      "saved_at": "2026-07-11T22:08:28",
+      "annotation_count": 1
+    },
+    {
+      "index": 4,
+      "path": "/home/he/VLN/substation_vln/outputs/220kv_erfeishan/annotation/annotation_20260711_220858.json",
+      "file": "annotation_20260711_220858.json",
+      "saved_at": "2026-07-11T22:22:24",
+      "annotation_count": 1
+    },
+    {
+      "index": 5,
+      "path": "/home/he/VLN/substation_vln/outputs/220kv_erfeishan/annotation/annotation_20260711_223921.json",
+      "file": "annotation_20260711_223921.json",
+      "saved_at": "2026-07-11T22:50:03",
+      "annotation_count": 3
+    },
+    {
+      "index": 6,
+      "path": "/home/he/VLN/substation_vln/outputs/220kv_erfeishan/annotation/annotation_20260711_230706.json",
+      "file": "annotation_20260711_230706.json",
+      "saved_at": "2026-07-11T23:12:24",
+      "annotation_count": 5
+    },
+    {
+      "index": 7,
+      "path": "/home/he/VLN/substation_vln/outputs/220kv_erfeishan/annotation/annotation_20260712_122952.json",
+      "file": "annotation_20260712_122952.json",
+      "saved_at": "2026-07-12T12:56:13",
+      "annotation_count": 6
+    }
+  ],
+  "counts": {
+    "patrol_points": 27,
+    "boundary_cells": 8206317,
+    "obstacle_cells": 839799,
+    "inflated_obstacle_cells": 1281952,
+    "free_space_cells": 6924595,
+    "preferred_road_cells": 1770580,
+    "preferred_path_cells": 490689
+  }
+}
