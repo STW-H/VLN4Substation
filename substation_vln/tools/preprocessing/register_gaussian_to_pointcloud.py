@@ -248,27 +248,55 @@ def main() -> int:
     if not gaussian_path.exists():
         raise SystemExit(f"Gaussian not found: {gaussian_path}")
 
+    print("\n" + "=" * 72)
+    print("Gaussian 到完整点云配准")
+    print("=" * 72)
+    print("  源点云（待变换）：Gaussian 中心点")
+    print(f"    {gaussian_path}")
+    print("  目标点云（参考坐标系）：轴矫正后的完整点云")
+    print(f"    {pointcloud_path}")
+    print("  变换方向：Gaussian → 完整点云")
+    if args.preview_icp_filter:
+        print("  当前模式：仅预览 ICP 过滤结果，不执行配准和保存。")
+    else:
+        print("  处理流程：读取数据 → 获取对应点 → 相似变换粗配准 → ICP 精配准 → 保存 → 复核")
+        print(f"  手工对应点数量：{args.num_points}")
+        print(f"  选点顺序：{args.pick_order}")
+        print("  注意：两个窗口中的对应点必须按完全相同的编号顺序选择。")
+
+    print("\n[配准 1/7] 读取源点云和目标点云")
     o3d = import_open3d()
 
     if args.pointcloud_sample_points == 0:
-        print("Loading complete point cloud. This may take a while and use substantial memory.")
-    print(f"Loading target/reference point cloud: {pointcloud_path}")
+        print("  将读取完整目标点云，可能耗时较长并占用较多内存。")
+    print(f"  正在读取目标/参考点云：{pointcloud_path}")
     pointcloud_pts, pointcloud_colors = sample_ply_points(pointcloud_path, args.pointcloud_sample_points)
-    print(f"Loading source/moving Gaussian centers: {gaussian_path}")
+    print(f"  目标点云读取完成：{len(pointcloud_pts):,} 个点。")
+    print(f"  正在读取源/待移动 Gaussian 中心点：{gaussian_path}")
     gaussian_pts, gaussian_colors = sample_ply_points(gaussian_path, args.gaussian_sample_points)
+    print(f"  Gaussian 采样读取完成：{len(gaussian_pts):,} 个点。")
 
     pointcloud_pcd = make_pcd(o3d, pointcloud_pts, color=(0.1, 0.45, 1.0), colors=pointcloud_colors)
     gaussian_pcd = make_pcd(o3d, gaussian_pts, color=(1.0, 0.15, 0.05), colors=gaussian_colors)
 
     if args.preview_icp_filter:
+        print("\n[ICP过滤预览 1/2] 加载已有粗配准矩阵并计算过滤结果")
         preview_matrix = load_filter_preview_matrix(args.preview_icp_filter.expanduser().resolve())
         _, _, keep_mask = filter_gaussian_for_icp(o3d, gaussian_pcd, pointcloud_pcd, preview_matrix, args)
+        print(f"  保留点数：{int(keep_mask.sum()):,}")
+        print(f"  移除点数：{int((~keep_mask).sum()):,}")
+        print("\n[ICP过滤预览 2/2] 打开复核窗口")
+        print("  原始颜色表示保留并参与 ICP 的点，红色表示被过滤的点；按 Q 关闭窗口。")
         visualize_icp_filter(o3d, gaussian_pcd, keep_mask, preview_matrix)
+        print("\nICP过滤预览完成；本次未修改或保存配准结果。")
         return 0
 
+    print("\n[配准 2/7] 获取人工对应点")
     if args.correspondences:
+        print(f"  使用已有对应点文件，跳过交互选点：{args.correspondences.expanduser().resolve()}")
         manual_gaussian, manual_pointcloud = load_correspondences(args.correspondences.expanduser().resolve())
     elif args.pick_order == "gaussian-first":
+        print("  先在 Gaussian 中选点，再在完整点云中按相同顺序选择对应结构点。")
         manual_gaussian = pick_with_pause(
             o3d,
             gaussian_pcd,
@@ -282,6 +310,7 @@ def main() -> int:
             args.num_points,
         )
     else:
+        print("  先在完整点云中选点，再在 Gaussian 中按相同顺序选择对应结构点。")
         manual_pointcloud = pick_with_pause(
             o3d,
             pointcloud_pcd,
@@ -295,6 +324,8 @@ def main() -> int:
             args.num_points,
         )
 
+    print(f"  对应点获取完成：{len(manual_gaussian)} 对。")
+    print("\n[配准 3/7] 使用 Umeyama 相似变换进行粗配准")
     scale, rotation, translation, initial_matrix, initial_rmse = umeyama_similarity(manual_gaussian, manual_pointcloud)
     print("\nInitial Gaussian -> pointcloud similarity transform")
     print("  scale:", scale)
@@ -304,14 +335,18 @@ def main() -> int:
     print("  matrix:\n", initial_matrix)
 
     if args.no_icp:
+        print("\n[配准 4/7] 已按配置跳过 ICP，粗配准矩阵直接作为最终矩阵。")
         final_matrix = initial_matrix
         icp_payload = None
     else:
+        print("\n[配准 4/7] 过滤点云并执行 ICP 精配准")
+        print("  Gaussian 过滤用于移除超出目标范围、低处点和统计离群点。")
+        print("  完整点云过滤用于缩小 ICP 目标范围；过滤仅影响 ICP，不修改原始文件。")
         icp_gaussian_pcd, icp_filter_payload, _ = filter_gaussian_for_icp(
             o3d, gaussian_pcd, pointcloud_pcd, initial_matrix, args
         )
         icp_target_pcd, target_filter_payload = filter_target_for_icp(o3d, pointcloud_pcd, args)
-        print("\nRunning ICP refinement: transformed Gaussian -> complete point cloud")
+        print("\n  正在执行 ICP：变换后的 Gaussian → 完整点云")
         final_matrix, icp_result, icp_stage_payload = run_icp(o3d, icp_gaussian_pcd, icp_target_pcd, initial_matrix, args)
         print("ICP result")
         print("  fitness:", icp_result.fitness)
@@ -360,9 +395,13 @@ def main() -> int:
         "final_matrix": np.asarray(final_matrix).tolist(),
     }
     registration_output = args.output.expanduser().resolve()
+    print("\n[配准 5/7] 保存配准矩阵及过程元数据")
+    print(f"  最终人工对应点 RMSE：{final_manual_rmse:.6f}")
+    print(f"  输出文件：{registration_output}")
     save_transform(registration_output, payload)
 
     if not args.no_save_aligned_gaussian:
+        print("\n[配准 6/7] 将最终矩阵应用到完整 Gaussian 文件并保存")
         aligned_output = args.aligned_gaussian_output.expanduser().resolve()
         aligned_metadata = (
             args.aligned_gaussian_metadata.expanduser().resolve()
@@ -377,10 +416,21 @@ def main() -> int:
             pointcloud_path,
             registration_output,
         )
+        print(f"  对齐后 Gaussian：{aligned_output}")
+        print(f"  对齐结果元数据：{aligned_metadata}")
+    else:
+        print("\n[配准 6/7] 已按配置跳过对齐 Gaussian 文件保存。")
 
     if not args.no_view:
+        print("\n[配准 7/7] 打开最终叠加复核窗口")
+        print("  完整点云显示原始颜色，对齐后的 Gaussian 显示红色；请检查主要结构是否重合。")
+        print("  按 Q 关闭窗口并结束流程。")
         visualize_registration(o3d, pointcloud_pcd, gaussian_pcd, final_matrix)
+    else:
+        print("\n[配准 7/7] 已按配置跳过最终叠加复核窗口。")
 
+    print("\nGaussian 到完整点云配准流程完成。")
+    print(f"  最终变换：{registration_output}")
     return 0
 
 

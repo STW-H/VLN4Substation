@@ -70,6 +70,11 @@ def build_axis_correction(
     rotation = np.vstack([x_axis, y_axis, z_axis])
     matrix = np.eye(4, dtype=np.float64)
     matrix[:3, :3] = rotation
+    # Preserve the rotated X/Y coordinates while translating only along the
+    # corrected Z axis, so the fitted reference ground plane is centered at
+    # z=0 in the axis-corrected coordinate frame.
+    ground_z_after_rotation = float((rotation @ plane_centroid)[2])
+    matrix[2, 3] = -ground_z_after_rotation
 
     return {
         "matrix": matrix,
@@ -79,6 +84,8 @@ def build_axis_correction(
         "z_axis": z_axis,
         "plane_centroid": plane_centroid,
         "plane_rmse": plane_rmse,
+        "ground_z_after_rotation": ground_z_after_rotation,
+        "z_translation": float(matrix[2, 3]),
         "ground_region_point_count": int(len(ground_points)),
         "x_axis_points": x_axis_points,
     }
@@ -98,22 +105,23 @@ DEFAULT_CONFIG = CONFIGS_DIR / "tools" / "preprocessing" / "convert_las_to_real_
 def crop_ground_region(o3d, display_pcd, display_center: np.ndarray, title: str) -> np.ndarray:
     print("\n" + "=" * 72)
     print(title)
-    print("Crop one ground region in this window.")
+    print("本步骤需要选择一块平坦地面点云，用于拟合基准地平面和确定 Z+ 方向。")
+    print("请尽量选择道路或硬化地面，并与其他步骤选择的区域保持较大间距。")
     print("Suggested Open3D workflow:")
     print("  1. Rotate/zoom until the target ground area is clear.")
     print("  2. Press K to enter selection/cropping mode.")
     print("  3. Drag/select a ground area.")
     print("  4. Press C to crop the selected area.")
     print("  5. Press Q to finish this region.")
-    print("Choose flat road/ground points and avoid equipment, poles, fences, and vegetation.")
+    print("请避开设备、底座、立杆、围栏、沟槽、植被及其他非地面点。")
     print("=" * 72)
-    input("Press Enter here to open this cropping window...")
+    input("确认已了解本步骤后，按 Enter 打开地面区域裁剪窗口...")
 
     cropped = crop_point_cloud(o3d, display_pcd, title, point_size=3.0)
     if cropped is None or cropped.is_empty():
         raise SystemExit("No points were cropped. Please run again and crop a visible ground region.")
     points = np.asarray(cropped.points) + display_center
-    print(f"Cropped ground region points: {len(points):,}")
+    print(f"本步骤完成：已选择地面点 {len(points):,} 个。")
     return points
 
 
@@ -129,46 +137,63 @@ def run_axis_correction(args: argparse.Namespace, o3d, display_pcd, display_cent
     axis_output = args.axis_output.expanduser().resolve() if args.axis_output else default_axis_output(real_ply)
     axis_metadata = args.axis_metadata.expanduser().resolve() if args.axis_metadata else axis_output.with_suffix(".json")
 
-    print("\nAxis correction selection guide")
-    print("  Step 1-3: crop three separated flat ground regions for plane fitting.")
-    print("  Step 4: pick two points along the desired X+ direction.")
-    print("  Display coordinates are centered for Open3D only; saved coordinates remain real LAS coordinates.")
+    print("\n" + "=" * 72)
+    print("开始点云坐标轴矫正")
+    print("=" * 72)
+    print("  轴矫正 1/5～3/5：选择三块相互分散的平坦地面区域。")
+    print("  轴矫正 4/5：依次选择两个点，定义从第一个点指向第二个点的 X+ 方向。")
+    print("  轴矫正 5/5：拟合地平面、构建变换、将基准地面设为 z=0 并保存结果。")
+    print("  Open3D 中仅为显示而临时中心化；保存结果使用完整工程坐标变换。")
 
-    ground_regions = [
-        crop_ground_region(o3d, display_pcd, display_center, f"Axis correction 1/4: crop ground region {idx}/3")
-        for idx in range(1, 4)
-    ]
+    ground_regions = []
+    for idx in range(1, 4):
+        ground_regions.append(
+            crop_ground_region(
+                o3d,
+                display_pcd,
+                display_center,
+                f"轴矫正 {idx}/5：选择地面区域 {idx}/3",
+            )
+        )
     ground_points = np.vstack(ground_regions)
+    print(f"\n地面选择完成：3 个区域，共 {len(ground_points):,} 个点。")
+    print("下一步将选择 X+ 方向。请在一条清晰、较长且近似水平的道路边缘或结构线上选点。")
+    print("选择顺序决定方向：第一个点 → 第二个点 = X+。")
     x_axis_points = (
         pick_with_pause(
             o3d,
             display_pcd,
-            "Axis correction 4/4: pick 2 points defining X+ direction",
+            "轴矫正 4/5：选择两个点定义 X+ 方向",
             2,
         )
         + display_center
     )
+    print("本步骤完成：已获取 X+ 方向的两个参考点。")
 
+    print("\n轴矫正 5/5：正在拟合地平面并计算坐标变换...")
     correction = build_axis_correction(
         ground_points=ground_points,
         x_axis_points=x_axis_points,
     )
 
-    print("\nAxis correction result")
+    print("\n轴矫正计算完成，结果如下：")
     print(f"  ground region points used: {correction['ground_region_point_count']:,}")
     print(f"  fitted plane RMSE: {correction['plane_rmse']:.6f}")
     print(f"  X+ axis in original coordinates: {correction['x_axis']}")
     print(f"  Y+ axis in original coordinates: {correction['y_axis']}")
     print(f"  Z+ axis in original coordinates: {correction['z_axis']}")
-    print("  origin: unchanged")
+    print(f"  fitted ground Z after rotation: {correction['ground_z_after_rotation']:.6f}")
+    print(f"  Z translation: {correction['z_translation']:.6f}")
+    print("  fitted reference ground: z=0; rotated X/Y coordinates unchanged")
     print("  matrix old -> axis-corrected:\n", correction["matrix"])
 
+    print(f"\n正在变换完整点云并写入：{axis_output}")
     stats = transform_binary_ply_xyz(real_ply, axis_output, correction["matrix"], args.chunk_size)
     payload = {
         "input": str(real_ply),
         "output": str(axis_output),
-        "transform_direction": "p_axis_corrected = R_old_to_axis_corrected @ p_real_coords; origin unchanged",
-        "origin_policy": "unchanged",
+        "transform_direction": "p_axis_corrected = R_old_to_axis_corrected @ p_real_coords + [0, 0, t_z]; fitted reference ground is z=0",
+        "origin_policy": "preserve rotated X/Y coordinates; translate corrected Z so fitted ground centroid has z=0",
         "las_selection_sample_points": int(len(display_pcd.points)),
         "display_center_subtracted": display_center,
         "ground_region_counts": [int(len(points)) for points in ground_regions],
@@ -177,7 +202,10 @@ def run_axis_correction(args: argparse.Namespace, o3d, display_pcd, display_cent
     }
     axis_metadata.parent.mkdir(parents=True, exist_ok=True)
     axis_metadata.write_text(json.dumps(json_ready(payload), ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"axis metadata: {axis_metadata}")
+    print("\n点云轴矫正全部完成。")
+    print(f"  矫正点云：{axis_output}")
+    print(f"  变换元数据：{axis_metadata}")
+    print("  请检查拟合平面 RMSE，并确认所选基准地面在新坐标系中位于 z=0 附近。")
 
 
 def main() -> int:
@@ -229,16 +257,26 @@ def main() -> int:
     input_path = args.input.expanduser().resolve()
     output_path = args.output.expanduser().resolve() if args.output else default_output(input_path).resolve()
 
+    print("\n[点云预处理 1/3] 读取 LAS/LAZ 点云样本")
+    print(f"  输入文件：{input_path}")
+    print(f"  最大采样点数：{args.axis_sample_points:,}")
     o3d = import_open3d()
-    print(f"Loading colored LAS sample for visualization/selection: {input_path}")
     las_pcd = load_las_as_pcd(input_path, args.axis_sample_points)
     display_pcd, display_center = centered_display_pcd(o3d, las_pcd)
+    print(f"  读取完成：当前样本包含 {len(las_pcd.points):,} 个点。")
     if not args.no_las_view and not args.axis_correct:
         visualize_las_sample(o3d, display_pcd, display_center, input_path.name, args.view_point_size)
 
+    print("\n[点云预处理 2/3] 恢复 LAS 真实坐标并写入 PLY")
+    print("  坐标规则：real = integer × LAS header scale + LAS header offset")
+    print(f"  输出文件：{output_path}")
     write_las_real_ply(input_path, output_path, args.chunk_size, args.metadata)
     if args.axis_correct:
+        print("\n[点云预处理 3/3] 交互式坐标轴矫正与地面归零")
         run_axis_correction(args, o3d, display_pcd, display_center, output_path)
+    else:
+        print("\n[点云预处理 3/3] 已跳过坐标轴矫正（axis_correct=false）。")
+    print("\n点云预处理命令执行完毕。")
     return 0
 
 

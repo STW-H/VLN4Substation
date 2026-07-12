@@ -13,6 +13,7 @@ CATEGORIES = {
     "3": {"key": "preferred_road", "name": "优先通过区", "default_label": "preferred_road", "geometry": "polygon"},
     "4": {"key": "planning_boundary", "name": "规划边界", "default_label": "planning_boundary", "geometry": "polygon", "single": True},
     "5": {"key": "preferred_path", "name": "优先路径", "default_label": "preferred_path", "geometry": "directed_polyline"},
+    "6": {"key": "narrow_space", "name": "狭窄空间", "default_label": "narrow_space", "geometry": "polygon"},
 }
 
 LABEL_COLORS_BGR = [

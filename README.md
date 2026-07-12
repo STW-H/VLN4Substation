@@ -14,6 +14,9 @@
 5. Gaussian 到完整点云的手工点粗配准 + ICP 精配准
 6. 对齐后的 Gaussian 点云预处理输出
 7. ICP 滤波效果预览
+8. 正射图交互标注与多次标注合并
+9. 规划边界、障碍物、道路和有向/无向路径地图构建
+10. 交互式 baseline A* 链路测试
 ```
 
 当前算法思路见：
@@ -38,11 +41,11 @@ substation_vln/docs/algorithm_overview.md
 │   │   ├── preprocessing/          # 点云/高斯预处理与配准
 │   │   ├── annotation/             # 标注与标注合并
 │   │   ├── visualization/          # 点云和高斯可视化
-│   │   └── planning/               # 路径规划入口，后续规划阶段添加脚本
+│   │   └── planning/               # 规划地图构建与 A* 测试入口
 │   ├── docs/                       # 算法思路文档
 │   ├── configs/                    # 后续实验配置
 │   ├── data/                       # 本地数据目录，不提交 Git
-│   └── outputs/                    # 可视化和实验输出，不提交 Git
+│   └── outputs/                    # 可视化和实验输出；当前 planning 结果允许提交
 ├── 变电站巡检机器人视觉语言导航研究方案.md
 └── .gitignore
 ```
@@ -252,7 +255,11 @@ substation_vln/outputs/220kv_erfeishan/planning/baseline_astar/
 external/
 substation_vln/data/raw/
 substation_vln/data/processed/
-substation_vln/outputs/
+substation_vln/outputs/*
+!substation_vln/outputs/220kv_erfeishan/
+substation_vln/outputs/220kv_erfeishan/*
+!substation_vln/outputs/220kv_erfeishan/planning/
+!substation_vln/outputs/220kv_erfeishan/planning/**
 *.ply
 *.las
 *.laz
@@ -270,4 +277,6 @@ environment.yml
 substation_vln/docs/
 substation_vln/src/
 substation_vln/tools/
+substation_vln/configs/
+substation_vln/outputs/220kv_erfeishan/planning/
 ```

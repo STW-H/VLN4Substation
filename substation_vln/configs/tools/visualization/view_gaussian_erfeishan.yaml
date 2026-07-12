@@ -1,6 +1,6 @@
 # Default arguments for tools/visualization/view_gaussian.py
 
-input: substation_vln/data/raw/220kv_erfeishan/gaussian/layer_2_point_cloud.ply
+input: substation_vln/data/processed/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled_real_coords_axis_corrected.ply
 width: 1920
 height: 1080
 snapshot: false

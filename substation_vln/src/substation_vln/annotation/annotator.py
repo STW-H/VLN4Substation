@@ -40,11 +40,14 @@ from .schema import (
 from substation_vln.interactive import ask_yes_no, choose_numbered_option
 
 
-OBSTACLE_SHAPE_OPTIONS = {
+AREA_SHAPE_OPTIONS = {
     "1": {"key": "polygon", "name": "多边形", "geometry": "polygon"},
     "2": {"key": "rectangle", "name": "矩形", "geometry": "rectangle"},
     "3": {"key": "circle", "name": "圆形", "geometry": "circle"},
 }
+
+# Kept in saved metadata for compatibility with existing annotation files.
+OBSTACLE_SHAPE_OPTIONS = AREA_SHAPE_OPTIONS
 
 PREFERRED_PATH_OPTIONS = {
     "1": {"key": "directed", "name": "有向路径", "geometry": "directed_polyline"},
@@ -1077,22 +1080,22 @@ class OrthoImageAnnotator:
             path_category["path_type"] = path_type["key"]
             path_category["path_type_name"] = path_type["name"]
             return path_category
-        if category["key"] != "obstacle":
+        if category["key"] not in ("obstacle", "narrow_space"):
             return category
 
         shape = choose_numbered_option(
-            prompt="请选择障碍物标注图形",
-            options=OBSTACLE_SHAPE_OPTIONS,
+            prompt=f"请选择{category['name']}标注图形",
+            options=AREA_SHAPE_OPTIONS,
             quit_label="返回标注类型选择",
         )
         if shape is None:
             return self.choose_category()
 
-        obstacle_category = dict(category)
-        obstacle_category["geometry"] = shape["geometry"]
-        obstacle_category["shape"] = shape["key"]
-        obstacle_category["shape_name"] = shape["name"]
-        return obstacle_category
+        shaped_category = dict(category)
+        shaped_category["geometry"] = shape["geometry"]
+        shaped_category["shape"] = shape["key"]
+        shaped_category["shape_name"] = shape["name"]
+        return shaped_category
 
     def print_controls(self) -> None:
         category = self.active_category

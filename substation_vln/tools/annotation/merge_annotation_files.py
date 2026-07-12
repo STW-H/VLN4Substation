@@ -58,6 +58,7 @@ CATEGORY_COLORS_BGR = {
     "preferred_road": (255, 140, 0),
     "preferred_path": (255, 30, 220),
     "patrol_point": (40, 190, 255),
+    "narrow_space": (180, 60, 180),
 }
 
 
