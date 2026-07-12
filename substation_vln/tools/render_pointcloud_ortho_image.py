@@ -88,6 +88,7 @@ def render_streaming(
     camera_side: str,
     background: tuple[int, int, int],
     chunk_size: int,
+    point_radius: int,
 ) -> None:
     vertex_count, props, data_offset, bounds_min, bounds_max = ply_bounds(input_path, chunk_size)
     names = [name for name, _ in props]
@@ -96,11 +97,12 @@ def render_streaming(
     has_rgb = {"red", "green", "blue"}.issubset(names)
 
     extent = bounds_max - bounds_min
-    width, height = compute_resolution(extent[:2] + 2.0 * margin, min_resolution)
     x_min = float(bounds_min[0] - margin)
     x_max = float(bounds_max[0] + margin)
     y_min = float(bounds_min[1] - margin)
     y_max = float(bounds_max[1] + margin)
+    render_extent_xy = np.array([x_max - x_min, y_max - y_min], dtype=np.float64)
+    width, height = compute_resolution(render_extent_xy, min_resolution)
     pixel_to_world, world_to_pixel = transform_matrices(x_min, x_max, y_min, y_max, width, height)
 
     image = np.empty((height, width, 3), dtype=np.uint8)
@@ -158,6 +160,10 @@ def render_streaming(
         print(f"\rrendered {end:,}/{vertex_count:,}", end="", flush=True)
     print()
 
+    if point_radius > 0:
+        print(f"expanding projected points with radius={point_radius} px")
+        image = expand_non_background_pixels(image, background, point_radius)
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
     Image.fromarray(image).save(output_path)
 
@@ -187,15 +193,55 @@ def render_streaming(
         "pixel_to_world_matrix": pixel_to_world.tolist(),
         "world_to_pixel_matrix": world_to_pixel.tolist(),
         "pixel_coordinate": "Use homogeneous [col, row, 1]. pixel_to_world gives [x, y, 1].",
+        "render_style": {
+            "point_radius_pixels": int(point_radius),
+            "note": "Point expansion only changes image appearance; coordinate mapping remains pixel-center based.",
+        },
     }
     metadata_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"saved image: {output_path}")
     print(f"saved metadata: {metadata_path}")
     print(f"resolution: {width} x {height}")
+    print(f"ground sample distance: x={pixel_to_world[0, 0]:.6f} m/px, y={abs(pixel_to_world[1, 1]):.6f} m/px")
+
+
+def expand_non_background_pixels(image: np.ndarray, background: tuple[int, int, int], radius: int) -> np.ndarray:
+    """Expand colored point pixels into nearby background pixels for easier annotation."""
+    if radius <= 0:
+        return image
+    bg = np.asarray(background, dtype=np.uint8)
+    base = image.copy()
+    result = image.copy()
+    source_mask = np.any(base != bg, axis=2)
+    offsets = []
+    for dy in range(-radius, radius + 1):
+        for dx in range(-radius, radius + 1):
+            if dx == 0 and dy == 0:
+                continue
+            if dx * dx + dy * dy <= radius * radius:
+                offsets.append((dx, dy))
+
+    for dx, dy in offsets:
+        src_y0 = max(0, -dy)
+        src_y1 = min(base.shape[0], base.shape[0] - dy)
+        dst_y0 = max(0, dy)
+        dst_y1 = min(base.shape[0], base.shape[0] + dy)
+        src_x0 = max(0, -dx)
+        src_x1 = min(base.shape[1], base.shape[1] - dx)
+        dst_x0 = max(0, dx)
+        dst_x1 = min(base.shape[1], base.shape[1] + dx)
+
+        src_mask = source_mask[src_y0:src_y1, src_x0:src_x1]
+        dst = result[dst_y0:dst_y1, dst_x0:dst_x1]
+        dst_bg = np.all(dst == bg, axis=2)
+        fill = src_mask & dst_bg
+        if np.any(fill):
+            dst[fill] = base[src_y0:src_y1, src_x0:src_x1][fill]
+    return result
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Render an orthographic 8K image for 2D annotation.")
+    parser = argparse.ArgumentParser(description="Render an orthographic image for 2D annotation.")
     parser.add_argument("input", type=Path, nargs="?", default=DEFAULT_AXIS_CORRECTED_POINTCLOUD)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--metadata", type=Path, help="Metadata JSON. Default is output path with .json suffix.")
@@ -204,6 +250,12 @@ def main() -> int:
     parser.add_argument("--camera-side", choices=("zplus", "zminus"), default="zplus")
     parser.add_argument("--background", type=parse_background, default=(255, 255, 255))
     parser.add_argument("--chunk-size", type=int, default=1_000_000)
+    parser.add_argument(
+        "--point-radius",
+        type=int,
+        default=0,
+        help="Expand each projected point by this pixel radius for a denser annotation image; 0 disables expansion.",
+    )
     args = parser.parse_args()
 
     input_path = args.input.expanduser().resolve()
@@ -221,6 +273,7 @@ def main() -> int:
         camera_side=args.camera_side,
         background=args.background,
         chunk_size=args.chunk_size,
+        point_radius=args.point_radius,
     )
     return 0
 

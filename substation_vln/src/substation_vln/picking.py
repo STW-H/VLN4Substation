@@ -6,13 +6,13 @@ from typing import Any
 
 import numpy as np
 
+from .interactive import pause, print_section
+
 
 def pick_points(o3d: Any, pcd, title: str, num_points: int) -> np.ndarray:
-    print("\n" + "=" * 72)
-    print(title)
+    print_section(title)
     print(f"Please pick exactly {num_points} points.")
     print("Open3D controls: Shift + left click to pick, Shift + right click to undo, Q to finish.")
-    print("=" * 72)
 
     vis = o3d.visualization.VisualizerWithEditing()
     vis.create_window(window_name=title, width=1280, height=800)
@@ -35,9 +35,8 @@ def pick_points(o3d: Any, pcd, title: str, num_points: int) -> np.ndarray:
 
 
 def pick_with_pause(o3d: Any, pcd, title: str, num_points: int) -> np.ndarray:
-    print("\n" + "-" * 72)
-    print(f"Next window: {title}")
+    print_section(f"Next window: {title}", char="-")
     print(f"Pick exactly {num_points} points, then press Q in the Open3D window.")
     print("Controls: Shift + left click = pick, Shift + right click = undo.")
-    input("Press Enter here to open this picking window...")
+    pause("Press Enter here to open this picking window...")
     return pick_points(o3d, pcd, title, num_points)
