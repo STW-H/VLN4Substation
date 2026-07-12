@@ -16,7 +16,8 @@ SRC_ROOT = PROJECT_ROOT / "substation_vln" / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from substation_vln.paths import DEFAULT_PROCESSED_POINTCLOUD_DIR  # noqa: E402
+from substation_vln.config import config_path, config_value, load_yaml_config  # noqa: E402
+from substation_vln.paths import CONFIGS_DIR, DEFAULT_PROCESSED_POINTCLOUD_DIR  # noqa: E402
 from substation_vln.preprocessing.pointcloud_io import (  # noqa: E402
     SUPPORTED_LAS,
     SUPPORTED_OPEN3D,
@@ -80,24 +81,34 @@ def save_converted_las(path: Path, output: Path) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="View a substation point cloud.")
-    parser.add_argument("input", type=Path, help="Point cloud file")
-    parser.add_argument("--voxel-size", type=float, default=0.0, help="Voxel downsample size")
-    parser.add_argument("--max-points", type=int, default=0, help="Randomly downsample if above this count; default 0 loads all points")
-    parser.add_argument("--no-center", action="store_true", help="Do not center the visualization")
-    parser.add_argument("--no-frame", action="store_true", help="Do not draw the coordinate frame")
-    parser.add_argument("--info", action="store_true", help="Only print point-cloud metadata")
+    default_config = CONFIGS_DIR / "tools" / "visualization" / "view_pointcloud_erfeishan.yaml"
+    pre_parser = argparse.ArgumentParser(add_help=False)
+    pre_parser.add_argument("--config", type=Path, default=default_config, help="YAML file with default tool arguments")
+    pre_args, _ = pre_parser.parse_known_args()
+    config = load_yaml_config(pre_args.config)
+
+    parser = argparse.ArgumentParser(description="View a substation point cloud.", parents=[pre_parser])
+    parser.add_argument("input", type=Path, nargs="?", default=config_path(config, "input"), help="Point cloud file")
+    parser.add_argument("--voxel-size", type=float, default=config_value(config, "voxel_size", 0.0), help="Voxel downsample size")
+    parser.add_argument("--max-points", type=int, default=config_value(config, "max_points", 0), help="Randomly downsample if above this count; default 0 loads all points")
+    parser.add_argument("--no-center", action="store_true", default=config_value(config, "no_center", False), help="Do not center the visualization")
+    parser.add_argument("--no-frame", action="store_true", default=config_value(config, "no_frame", False), help="Do not draw the coordinate frame")
+    parser.add_argument("--info", action="store_true", default=config_value(config, "info", False), help="Only print point-cloud metadata")
     parser.add_argument(
         "--save-converted",
         action="store_true",
+        default=config_value(config, "save_converted", False),
         help="For LAS/LAZ input, save real-coordinate PLY to the processed folder before viewing",
     )
     parser.add_argument(
         "--converted-output",
         type=Path,
+        default=config_path(config, "converted_output"),
         help="Output path for --save-converted; default is processed/220kv_erfeishan/pointcloud/<stem>_real_coords.ply",
     )
     args = parser.parse_args()
+    if args.input is None:
+        parser.error("input is required either as a positional argument or in the YAML config")
 
     path = args.input.expanduser().resolve()
     if not path.exists():

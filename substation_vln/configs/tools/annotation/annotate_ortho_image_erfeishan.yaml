@@ -1,0 +1,21 @@
+# Default arguments for tools/annotation/annotate_ortho_image.py
+
+image: substation_vln/outputs/220kv_erfeishan/annotation/axis_corrected_pointcloud_ortho_8k.png
+metadata: substation_vln/outputs/220kv_erfeishan/annotation/axis_corrected_pointcloud_ortho_8k.json
+output: null
+review_image: null
+
+window_width: 1200
+window_height: 0
+disable_dynamic_window_size: false
+window_resize_debounce_ms: 300.0
+min_window_width: 320
+min_window_height: 240
+allow_free_window_aspect: false
+initial_view: native
+line_width: 2
+label_font_size: 22
+min_pixel_area: 16.0
+min_direction_pixel_length: 8.0
+default_circle_radius_m: 0.5
+display_interpolation: auto

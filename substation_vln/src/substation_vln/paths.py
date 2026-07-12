@@ -7,11 +7,13 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 PACKAGE_ROOT = PROJECT_ROOT / "substation_vln"
+CONFIGS_DIR = PACKAGE_ROOT / "configs"
 
 RAW_ERFEISHAN_DIR = PACKAGE_ROOT / "data" / "raw" / "220kv_erfeishan"
 PROCESSED_ERFEISHAN_DIR = PACKAGE_ROOT / "data" / "processed" / "220kv_erfeishan"
 OUTPUTS_ERFEISHAN_DIR = PACKAGE_ROOT / "outputs" / "220kv_erfeishan"
 ANNOTATION_OUTPUTS_ERFEISHAN_DIR = OUTPUTS_ERFEISHAN_DIR / "annotation"
+PLANNING_OUTPUTS_ERFEISHAN_DIR = OUTPUTS_ERFEISHAN_DIR / "planning"
 
 DEFAULT_AXIS_CORRECTED_POINTCLOUD = (
     PROCESSED_ERFEISHAN_DIR / "pointcloud" / "erfeishan_0.02_resampled_real_coords_axis_corrected.ply"

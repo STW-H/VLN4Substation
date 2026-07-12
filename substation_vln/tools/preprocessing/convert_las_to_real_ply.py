@@ -17,8 +17,9 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from substation_vln.preprocessing.las import write_las_real_ply  # noqa: E402
+from substation_vln.config import config_path, config_value, load_yaml_config  # noqa: E402
 from substation_vln.picking import pick_with_pause  # noqa: E402
-from substation_vln.paths import DEFAULT_PROCESSED_POINTCLOUD_DIR  # noqa: E402
+from substation_vln.paths import CONFIGS_DIR, DEFAULT_PROCESSED_POINTCLOUD_DIR  # noqa: E402
 from substation_vln.preprocessing.pointcloud_io import (  # noqa: E402
     describe_pcd,
     import_open3d,
@@ -89,6 +90,9 @@ def default_output(path: Path) -> Path:
 
 def default_axis_output(path: Path) -> Path:
     return path.with_name(f"{path.stem}_axis_corrected{path.suffix}")
+
+
+DEFAULT_CONFIG = CONFIGS_DIR / "tools" / "preprocessing" / "convert_las_to_real_ply_erfeishan.yaml"
 
 
 def crop_ground_region(o3d, display_pcd, display_center: np.ndarray, title: str) -> np.ndarray:
@@ -177,39 +181,50 @@ def run_axis_correction(args: argparse.Namespace, o3d, display_pcd, display_cent
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Convert LAS/LAZ to real-coordinate PLY.")
-    parser.add_argument("input", type=Path, help="Input LAS/LAZ file")
+    pre_parser = argparse.ArgumentParser(add_help=False)
+    pre_parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG, help="YAML file with default tool arguments")
+    pre_args, _ = pre_parser.parse_known_args()
+    config = load_yaml_config(pre_args.config)
+
+    parser = argparse.ArgumentParser(description="Convert LAS/LAZ to real-coordinate PLY.", parents=[pre_parser])
+    parser.add_argument("input", type=Path, nargs="?", default=config_path(config, "input"), help="Input LAS/LAZ file")
     parser.add_argument(
         "--output",
         type=Path,
+        default=config_path(config, "output"),
         help="Output binary PLY file; default is processed/220kv_erfeishan/pointcloud/<input_stem>_real_coords.ply",
     )
-    parser.add_argument("--chunk-size", type=int, default=1_000_000, help="Points per streaming chunk")
-    parser.add_argument("--metadata", type=Path, help="Optional JSON metadata output")
+    parser.add_argument("--chunk-size", type=int, default=config_value(config, "chunk_size", 1_000_000), help="Points per streaming chunk")
+    parser.add_argument("--metadata", type=Path, default=config_path(config, "metadata"), help="Optional JSON metadata output")
     parser.add_argument(
         "--axis-correct",
         action="store_true",
+        default=config_value(config, "axis_correct", False),
         help="After real-coordinate conversion, interactively fit ground/X axes and write an axis-corrected PLY",
     )
     parser.add_argument(
         "--axis-output",
         type=Path,
+        default=config_path(config, "axis_output"),
         help="Output PLY for --axis-correct; default is <output_stem>_axis_corrected.ply",
     )
-    parser.add_argument("--axis-metadata", type=Path, help="Output JSON for axis-correction metadata")
+    parser.add_argument("--axis-metadata", type=Path, default=config_path(config, "axis_metadata"), help="Output JSON for axis-correction metadata")
     parser.add_argument(
         "--axis-sample-points",
         type=int,
-        default=20_000_000,
+        default=config_value(config, "axis_sample_points", 20_000_000),
         help="LAS points shown/used for visualization and interactive axis fitting; default 20,000,000",
     )
     parser.add_argument(
         "--no-las-view",
         action="store_true",
+        default=config_value(config, "no_las_view", False),
         help="Skip the initial colored LAS visualization window",
     )
-    parser.add_argument("--view-point-size", type=float, default=2.0, help="Point size for LAS visualization")
+    parser.add_argument("--view-point-size", type=float, default=config_value(config, "view_point_size", 2.0), help="Point size for LAS visualization")
     args = parser.parse_args()
+    if args.input is None:
+        parser.error("input is required either as a positional argument or in the YAML config")
 
     input_path = args.input.expanduser().resolve()
     output_path = args.output.expanduser().resolve() if args.output else default_output(input_path).resolve()

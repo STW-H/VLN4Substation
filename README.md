@@ -159,6 +159,7 @@ substation_vln/data/raw/220kv_erfeishan/gaussian/layer_2_point_cloud.ply
 substation_vln/data/processed/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled_real_coords_axis_corrected.ply
 substation_vln/data/processed/220kv_erfeishan/gaussian/layer_2_aligned_to_axis_corrected_pointcloud.ply
 substation_vln/data/processed/220kv_erfeishan/registration/gaussian_to_pointcloud_transform.json
+substation_vln/outputs/220kv_erfeishan/annotation/annotations_merged.json
 ```
 
 ## Common Commands
@@ -204,6 +205,31 @@ python substation_vln/tools/preprocessing/register_gaussian_to_pointcloud.py \
 ```bash
 python substation_vln/tools/preprocessing/register_gaussian_to_pointcloud.py \
   --preview-icp-filter substation_vln/data/processed/220kv_erfeishan/registration/gaussian_to_pointcloud_transform.json
+```
+
+合并多次二维标注结果：
+
+```bash
+python substation_vln/tools/annotation/merge_annotation_files.py
+```
+
+从合并标注构建规划地图：
+
+```bash
+python substation_vln/tools/planning/build_planning_map.py \
+  --config substation_vln/configs/tools/planning/build_planning_map_erfeishan.yaml
+```
+
+每个 `tools` 脚本都有对应的默认 YAML 配置，统一放在：
+
+```text
+substation_vln/configs/tools/
+```
+
+默认输出到：
+
+```text
+substation_vln/outputs/220kv_erfeishan/planning/
 ```
 
 ## Git Policy

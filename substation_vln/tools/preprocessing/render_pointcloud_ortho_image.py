@@ -17,11 +17,13 @@ SRC_ROOT = PROJECT_ROOT / "substation_vln" / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from substation_vln.paths import ANNOTATION_OUTPUTS_ERFEISHAN_DIR, DEFAULT_AXIS_CORRECTED_POINTCLOUD  # noqa: E402
+from substation_vln.config import config_path, config_value, load_yaml_config  # noqa: E402
+from substation_vln.paths import ANNOTATION_OUTPUTS_ERFEISHAN_DIR, CONFIGS_DIR, DEFAULT_AXIS_CORRECTED_POINTCLOUD  # noqa: E402
 from substation_vln.preprocessing.pointcloud_io import binary_ply_dtype, parse_binary_ply_vertex  # noqa: E402
 
 
 DEFAULT_OUTPUT = ANNOTATION_OUTPUTS_ERFEISHAN_DIR / "axis_corrected_pointcloud_ortho_8k.png"
+DEFAULT_CONFIG = CONFIGS_DIR / "tools" / "preprocessing" / "render_pointcloud_ortho_image_erfeishan.yaml"
 
 
 def parse_background(value: str) -> tuple[int, int, int]:
@@ -31,6 +33,17 @@ def parse_background(value: str) -> tuple[int, int, int]:
     if any(part < 0.0 or part > 1.0 for part in parts):
         raise argparse.ArgumentTypeError("background values must be in [0, 1]")
     return tuple(int(round(part * 255.0)) for part in parts)  # type: ignore[return-value]
+
+
+def config_background(value) -> tuple[int, int, int]:
+    if isinstance(value, str):
+        return parse_background(value)
+    parts = list(value)
+    if len(parts) != 3:
+        raise ValueError("background config must contain three values")
+    if all(0.0 <= float(part) <= 1.0 for part in parts):
+        return tuple(int(round(float(part) * 255.0)) for part in parts)  # type: ignore[return-value]
+    return tuple(int(part) for part in parts)  # type: ignore[return-value]
 
 
 def compute_resolution(extent_xy: np.ndarray, min_resolution: int) -> tuple[int, int]:
@@ -241,19 +254,25 @@ def expand_non_background_pixels(image: np.ndarray, background: tuple[int, int, 
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Render an orthographic image for 2D annotation.")
-    parser.add_argument("input", type=Path, nargs="?", default=DEFAULT_AXIS_CORRECTED_POINTCLOUD)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--metadata", type=Path, help="Metadata JSON. Default is output path with .json suffix.")
-    parser.add_argument("--min-resolution", type=int, default=8192, help="Shorter image side in pixels")
-    parser.add_argument("--margin", type=float, default=2.0)
-    parser.add_argument("--camera-side", choices=("zplus", "zminus"), default="zplus")
-    parser.add_argument("--background", type=parse_background, default=(255, 255, 255))
-    parser.add_argument("--chunk-size", type=int, default=1_000_000)
+    pre_parser = argparse.ArgumentParser(add_help=False)
+    pre_parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG, help="YAML file with default tool arguments")
+    pre_args, _ = pre_parser.parse_known_args()
+    config = load_yaml_config(pre_args.config)
+    background = config_background(config_value(config, "background", [1.0, 1.0, 1.0]))
+
+    parser = argparse.ArgumentParser(description="Render an orthographic image for 2D annotation.", parents=[pre_parser])
+    parser.add_argument("input", type=Path, nargs="?", default=config_path(config, "input", DEFAULT_AXIS_CORRECTED_POINTCLOUD))
+    parser.add_argument("--output", type=Path, default=config_path(config, "output", DEFAULT_OUTPUT))
+    parser.add_argument("--metadata", type=Path, default=config_path(config, "metadata"), help="Metadata JSON. Default is output path with .json suffix.")
+    parser.add_argument("--min-resolution", type=int, default=config_value(config, "min_resolution", 8192), help="Shorter image side in pixels")
+    parser.add_argument("--margin", type=float, default=config_value(config, "margin", 2.0))
+    parser.add_argument("--camera-side", choices=("zplus", "zminus"), default=config_value(config, "camera_side", "zplus"))
+    parser.add_argument("--background", type=parse_background, default=background)
+    parser.add_argument("--chunk-size", type=int, default=config_value(config, "chunk_size", 1_000_000))
     parser.add_argument(
         "--point-radius",
         type=int,
-        default=0,
+        default=config_value(config, "point_radius", 0),
         help="Expand each projected point by this pixel radius for a denser annotation image; 0 disables expansion.",
     )
     args = parser.parse_args()

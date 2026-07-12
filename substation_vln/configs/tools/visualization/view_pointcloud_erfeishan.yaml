@@ -1,0 +1,10 @@
+# Default arguments for tools/visualization/view_pointcloud.py
+
+input: substation_vln/data/processed/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled_real_coords_axis_corrected.ply
+voxel_size: 0.0
+max_points: 0
+no_center: false
+no_frame: false
+info: false
+save_converted: false
+converted_output: null

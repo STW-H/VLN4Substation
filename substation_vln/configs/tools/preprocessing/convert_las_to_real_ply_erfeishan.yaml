@@ -1,0 +1,13 @@
+# Default arguments for tools/preprocessing/convert_las_to_real_ply.py
+
+input: substation_vln/data/raw/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled.las
+output: substation_vln/data/processed/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled_real_coords.ply
+chunk_size: 1000000
+metadata: substation_vln/data/processed/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled_real_coords.json
+
+axis_correct: false
+axis_output: substation_vln/data/processed/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled_real_coords_axis_corrected.ply
+axis_metadata: substation_vln/data/processed/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled_real_coords_axis_corrected.json
+axis_sample_points: 20000000
+no_las_view: false
+view_point_size: 2.0

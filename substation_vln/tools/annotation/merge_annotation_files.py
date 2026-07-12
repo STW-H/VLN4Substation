@@ -18,12 +18,14 @@ SRC_ROOT = PROJECT_ROOT / "substation_vln" / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from substation_vln.paths import ANNOTATION_OUTPUTS_ERFEISHAN_DIR  # noqa: E402
+from substation_vln.config import config_path, load_yaml_config  # noqa: E402
+from substation_vln.paths import ANNOTATION_OUTPUTS_ERFEISHAN_DIR, CONFIGS_DIR  # noqa: E402
 
 
 DEFAULT_IMAGE = ANNOTATION_OUTPUTS_ERFEISHAN_DIR / "axis_corrected_pointcloud_ortho_8k.png"
 DEFAULT_OUTPUT = ANNOTATION_OUTPUTS_ERFEISHAN_DIR / "annotations_merged.json"
 DEFAULT_REVIEW = ANNOTATION_OUTPUTS_ERFEISHAN_DIR / "annotations_merged_review.png"
+DEFAULT_CONFIG = CONFIGS_DIR / "tools" / "annotation" / "merge_annotation_files_erfeishan.yaml"
 
 LABEL_TRANSLATIONS = {
     "daolu": "preferred_road",
@@ -249,11 +251,16 @@ def summarize(merged_payload: dict) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Merge split 2D annotation JSON files.")
-    parser.add_argument("--annotation-dir", type=Path, default=ANNOTATION_OUTPUTS_ERFEISHAN_DIR)
-    parser.add_argument("--image", type=Path, default=DEFAULT_IMAGE)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--review-image", type=Path, default=DEFAULT_REVIEW)
+    pre_parser = argparse.ArgumentParser(add_help=False)
+    pre_parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG, help="YAML file with default tool arguments")
+    pre_args, _ = pre_parser.parse_known_args()
+    config = load_yaml_config(pre_args.config)
+
+    parser = argparse.ArgumentParser(description="Merge split 2D annotation JSON files.", parents=[pre_parser])
+    parser.add_argument("--annotation-dir", type=Path, default=config_path(config, "annotation_dir", ANNOTATION_OUTPUTS_ERFEISHAN_DIR))
+    parser.add_argument("--image", type=Path, default=config_path(config, "image", DEFAULT_IMAGE))
+    parser.add_argument("--output", type=Path, default=config_path(config, "output", DEFAULT_OUTPUT))
+    parser.add_argument("--review-image", type=Path, default=config_path(config, "review_image", DEFAULT_REVIEW))
     args = parser.parse_args()
 
     files = load_annotation_files(args.annotation_dir)

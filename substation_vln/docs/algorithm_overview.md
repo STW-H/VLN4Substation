@@ -185,7 +185,7 @@ visualization/
   view_gaussian.py                      # 使用 Habitat-GS 查看/渲染高斯
 
 planning/
-  # 后续进入规划地图和路径规划阶段时再添加脚本
+  build_planning_map.py                 # 从合并标注构建规划地图
 ```
 
 站点专用、一次性、可由官方工具替代的脚本不再放在 `tools/` 中。
@@ -198,6 +198,20 @@ preprocessing/    # 点云/高斯/坐标预处理基础函数
 visualization/    # 点云与高斯可视化基础函数
 planning/         # 路径规划算法，含 baseline A* 与 improved A*
 ```
+
+配置文件统一放在：
+
+```text
+substation_vln/configs/
+```
+
+其中，当前二妃山规划地图构建使用：
+
+```text
+substation_vln/configs/tools/planning/build_planning_map_erfeishan.yaml
+```
+
+每个 `tools` 脚本也都有对应的默认 YAML 配置，位于 `substation_vln/configs/tools/` 下。命令行入口默认读取自己的 YAML，同时仍允许通过命令行参数临时覆盖配置。
 
 ## 3. 预处理后的标注流程
 
@@ -310,17 +324,107 @@ object id 与空间范围
 语义名称与任务语言的映射关系
 ```
 
-## 4. 后续工作
+## 4. 规划地图构建
+
+完成标注合并后，下一步是把矢量标注转换为路径规划可直接使用的栅格地图。当前实现分为两层：
+
+```text
+基础类地图构建
+  -> boundary_mask
+  -> obstacle_mask
+  -> preferred_road_mask
+  -> preferred_path_mask
+  -> patrol_points
+
+派生类地图构建
+  -> inflated_obstacle_mask
+  -> free_space_mask
+  -> distance_to_obstacle_m
+  -> distance_to_preferred_path_m
+  -> preferred_path_attraction
+  -> cost_map
+```
+
+基础类地图只表达人工标注直接给出的空间语义：
+
+```text
+planning_boundary 作为规划活动边界
+obstacle 作为不可通行障碍物
+preferred_road 作为优先通行区域
+preferred_path 作为有向路径吸引子的中心线
+patrol_point 作为后续巡视任务点和巡视方向
+```
+
+派生类地图由基础地图和配置参数生成，主要服务于 A* 和改进 A*：
+
+```text
+obstacle_inflation_radius_m 控制障碍物膨胀半径
+preferred_path_sigma_m 控制路径吸引场扩散范围
+preferred_path_alpha 控制路径吸引强度
+preferred_road_cost 控制优先道路代价
+obstacle_repulsion_radius_m / obstacle_repulsion_weight 控制贴近障碍物的惩罚
+resolution_m 控制栅格地图分辨率
+```
+
+当前工具：
+
+```text
+substation_vln/tools/planning/build_planning_map.py
+```
+
+运行命令：
+
+```bash
+python substation_vln/tools/planning/build_planning_map.py \
+  --config substation_vln/configs/tools/planning/build_planning_map_erfeishan.yaml
+```
+
+默认输出：
+
+```text
+substation_vln/outputs/220kv_erfeishan/planning/
+├── planning_map.npz
+├── planning_map_metadata.json
+├── patrol_points.json
+├── boundary_mask.png
+├── obstacle_mask.png
+├── inflated_obstacle_mask.png
+├── free_space_mask.png
+├── preferred_road_mask.png
+├── preferred_path_mask.png
+├── cost_map.png
+└── planning_overlay.png
+```
+
+后续实现 baseline A* 时，应主要读取：
+
+```text
+free_space_mask
+cost_map
+patrol_points
+grid metadata
+```
+
+改进 A* 可以进一步利用：
+
+```text
+preferred_path_attraction
+distance_to_preferred_path_m
+distance_to_obstacle_m
+preferred_road_mask
+```
+
+## 5. 后续工作
 
 后续主要内容将围绕以下方向继续完善：
 
 ```text
-二维地图生成
-可通行区域与安全约束标注工具
 候选巡视点和观测位姿数据结构
+baseline A* 路径规划
+引入 preferred_path 吸引场和障碍物距离场的改进 A*
 局部主动观测策略
 VLM/VLN 黑盒评价与局部决策接口
 仿真验证流程
 ```
 
-当前阶段先以“完成可靠预处理和坐标统一”为主，确保后续地图、标注和局部观测算法都建立在同一坐标基础上。
+当前阶段先以“完成可靠预处理、坐标统一、标注合并和规划地图构建”为主，确保后续 A*、改进 A* 和局部观测算法都建立在同一坐标基础上。

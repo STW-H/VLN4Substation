@@ -1,0 +1,33 @@
+# Planning-map build configuration for 220kV Erfeishan.
+
+paths:
+  annotation: substation_vln/outputs/220kv_erfeishan/annotation/annotations_merged.json
+  output_dir: substation_vln/outputs/220kv_erfeishan/planning
+
+base_map:
+  resolution_m: 0.10
+  bounds_padding_m: 1.0
+  preferred_path_width_m: 0.8
+
+derived_map:
+  obstacle_inflation_radius_m: 0.4
+  preferred_path_sigma_m: 1.5
+  obstacle_repulsion_radius_m: 1.0
+  obstacle_repulsion_weight: 0.8
+  base_cost: 1.0
+  preferred_road_cost: 0.6
+  preferred_path_alpha: 0.3
+  min_cost: 0.2
+
+outputs:
+  npz: planning_map.npz
+  metadata: planning_map_metadata.json
+  patrol_points: patrol_points.json
+  boundary_mask_png: boundary_mask.png
+  obstacle_mask_png: obstacle_mask.png
+  inflated_obstacle_mask_png: inflated_obstacle_mask.png
+  free_space_mask_png: free_space_mask.png
+  preferred_road_mask_png: preferred_road_mask.png
+  preferred_path_mask_png: preferred_path_mask.png
+  cost_map_png: cost_map.png
+  planning_overlay_png: planning_overlay.png

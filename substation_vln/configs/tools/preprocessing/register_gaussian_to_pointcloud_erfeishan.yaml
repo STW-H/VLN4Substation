@@ -1,0 +1,31 @@
+# Default arguments for tools/preprocessing/register_gaussian_to_pointcloud.py
+
+pointcloud: substation_vln/data/processed/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled_real_coords_axis_corrected.ply
+gaussian: substation_vln/data/raw/220kv_erfeishan/gaussian/layer_2_point_cloud.ply
+output: substation_vln/data/processed/220kv_erfeishan/registration/gaussian_to_pointcloud_transform.json
+aligned_gaussian_output: substation_vln/data/processed/220kv_erfeishan/gaussian/layer_2_aligned_to_axis_corrected_pointcloud.ply
+aligned_gaussian_metadata: substation_vln/data/processed/220kv_erfeishan/gaussian/layer_2_aligned_to_axis_corrected_pointcloud.json
+no_save_aligned_gaussian: false
+
+num_points: 6
+pointcloud_sample_points: 0
+gaussian_sample_points: 1000000
+correspondences: null
+preview_icp_filter: null
+pick_order: pointcloud-first
+
+icp_method: point_to_point
+icp_voxel_size: 0.5
+max_correspondence_distance: 2.0
+icp_iterations: 80
+icp_multiscale: false
+icp_multiscale_spec: "2.0:5.0,1.0:3.0,0.5:1.5,0.2:0.8"
+no_icp_filter_target_bounds: false
+icp_filter_target_bounds_margin: 5.0
+no_icp_filter_statistical: false
+no_icp_filter_height: false
+icp_min_height_above_target_min: 5.0
+icp_filter_nb_neighbors: 30
+icp_filter_std_ratio: 2.0
+no_icp: false
+no_view: false

@@ -22,8 +22,10 @@ SRC_ROOT = PROJECT_ROOT / "substation_vln" / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
+from substation_vln.config import config_path, config_value, load_yaml_config  # noqa: E402
 from substation_vln.geometry import bounds_text, transform_points, umeyama_similarity  # noqa: E402
 from substation_vln.paths import (  # noqa: E402
+    CONFIGS_DIR,
     DEFAULT_ALIGNED_GAUSSIAN,
     DEFAULT_AXIS_CORRECTED_POINTCLOUD,
     DEFAULT_GAUSSIAN,
@@ -40,6 +42,9 @@ from substation_vln.preprocessing.registration import (  # noqa: E402
     save_transform,
 )
 from substation_vln.visualization.pointcloud import configure_default_camera, configure_visualizer, coordinate_frame_for_points  # noqa: E402
+
+
+DEFAULT_CONFIG = CONFIGS_DIR / "tools" / "preprocessing" / "register_gaussian_to_pointcloud_erfeishan.yaml"
 
 
 def visualize_registration(o3d: Any, pointcloud_pcd, gaussian_pcd, final_matrix: np.ndarray) -> None:
@@ -170,56 +175,64 @@ def visualize_icp_filter(o3d: Any, gaussian_pcd, keep_mask: np.ndarray, matrix: 
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Register Gaussian centers to the processed full point cloud.")
+    pre_parser = argparse.ArgumentParser(add_help=False)
+    pre_parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG, help="YAML file with default tool arguments")
+    pre_args, _ = pre_parser.parse_known_args()
+    config = load_yaml_config(pre_args.config)
+
+    parser = argparse.ArgumentParser(
+        description="Register Gaussian centers to the processed full point cloud.",
+        parents=[pre_parser],
+    )
     parser.add_argument(
         "--pointcloud",
         type=Path,
-        default=DEFAULT_AXIS_CORRECTED_POINTCLOUD,
+        default=config_path(config, "pointcloud", DEFAULT_AXIS_CORRECTED_POINTCLOUD),
         help="Processed complete point cloud PLY, or axis-correction JSON whose output field points to the PLY",
     )
-    parser.add_argument("--gaussian", type=Path, default=DEFAULT_GAUSSIAN, help="Gaussian PLY; default is raw Z-up Gaussian")
-    parser.add_argument("--output", type=Path, default=DEFAULT_REGISTRATION, help="Output transform JSON")
+    parser.add_argument("--gaussian", type=Path, default=config_path(config, "gaussian", DEFAULT_GAUSSIAN), help="Gaussian PLY; default is raw Z-up Gaussian")
+    parser.add_argument("--output", type=Path, default=config_path(config, "output", DEFAULT_REGISTRATION), help="Output transform JSON")
     parser.add_argument(
         "--aligned-gaussian-output",
         type=Path,
-        default=DEFAULT_ALIGNED_GAUSSIAN,
+        default=config_path(config, "aligned_gaussian_output", DEFAULT_ALIGNED_GAUSSIAN),
         help="Processed aligned Gaussian point-cloud PLY output",
     )
-    parser.add_argument("--aligned-gaussian-metadata", type=Path, help="Processed aligned Gaussian metadata JSON")
-    parser.add_argument("--no-save-aligned-gaussian", action="store_true", help="Do not save processed aligned Gaussian")
-    parser.add_argument("--num-points", type=int, default=6, help="Number of manual correspondence points")
+    parser.add_argument("--aligned-gaussian-metadata", type=Path, default=config_path(config, "aligned_gaussian_metadata"), help="Processed aligned Gaussian metadata JSON")
+    parser.add_argument("--no-save-aligned-gaussian", action="store_true", default=config_value(config, "no_save_aligned_gaussian", False), help="Do not save processed aligned Gaussian")
+    parser.add_argument("--num-points", type=int, default=config_value(config, "num_points", 6), help="Number of manual correspondence points")
     parser.add_argument(
         "--pointcloud-sample-points",
         type=int,
-        default=0,
+        default=config_value(config, "pointcloud_sample_points", 0),
         help="Points shown from complete point cloud; default 0 uses all points",
     )
-    parser.add_argument("--gaussian-sample-points", type=int, default=1_000_000)
-    parser.add_argument("--correspondences", type=Path, help="Optional JSON correspondences to skip interactive picking")
-    parser.add_argument("--preview-icp-filter", type=Path, help="Only visualize Gaussian ICP filtering using a transform JSON")
-    parser.add_argument("--icp-method", choices=["point_to_point", "point_to_plane"], default="point_to_point")
-    parser.add_argument("--icp-voxel-size", type=float, default=0.5)
-    parser.add_argument("--max-correspondence-distance", type=float, default=2.0)
-    parser.add_argument("--icp-iterations", type=int, default=80)
-    parser.add_argument("--icp-multiscale", action="store_true", help="Run coarse-to-fine multi-scale ICP")
+    parser.add_argument("--gaussian-sample-points", type=int, default=config_value(config, "gaussian_sample_points", 1_000_000))
+    parser.add_argument("--correspondences", type=Path, default=config_path(config, "correspondences"), help="Optional JSON correspondences to skip interactive picking")
+    parser.add_argument("--preview-icp-filter", type=Path, default=config_path(config, "preview_icp_filter"), help="Only visualize Gaussian ICP filtering using a transform JSON")
+    parser.add_argument("--icp-method", choices=["point_to_point", "point_to_plane"], default=config_value(config, "icp_method", "point_to_point"))
+    parser.add_argument("--icp-voxel-size", type=float, default=config_value(config, "icp_voxel_size", 0.5))
+    parser.add_argument("--max-correspondence-distance", type=float, default=config_value(config, "max_correspondence_distance", 2.0))
+    parser.add_argument("--icp-iterations", type=int, default=config_value(config, "icp_iterations", 80))
+    parser.add_argument("--icp-multiscale", action="store_true", default=config_value(config, "icp_multiscale", False), help="Run coarse-to-fine multi-scale ICP")
     parser.add_argument(
         "--icp-multiscale-spec",
-        default="2.0:5.0,1.0:3.0,0.5:1.5,0.2:0.8",
+        default=config_value(config, "icp_multiscale_spec", "2.0:5.0,1.0:3.0,0.5:1.5,0.2:0.8"),
         help="Comma-separated voxel:distance stages for --icp-multiscale",
     )
-    parser.add_argument("--no-icp-filter-target-bounds", action="store_true")
-    parser.add_argument("--icp-filter-target-bounds-margin", type=float, default=5.0)
-    parser.add_argument("--no-icp-filter-statistical", action="store_true")
-    parser.add_argument("--no-icp-filter-height", action="store_true")
-    parser.add_argument("--icp-min-height-above-target-min", type=float, default=5.0)
-    parser.add_argument("--icp-filter-nb-neighbors", type=int, default=30)
-    parser.add_argument("--icp-filter-std-ratio", type=float, default=2.0)
-    parser.add_argument("--no-icp", action="store_true", help="Only use manual similarity transform")
-    parser.add_argument("--no-view", action="store_true", help="Do not show final overlay window")
+    parser.add_argument("--no-icp-filter-target-bounds", action="store_true", default=config_value(config, "no_icp_filter_target_bounds", False))
+    parser.add_argument("--icp-filter-target-bounds-margin", type=float, default=config_value(config, "icp_filter_target_bounds_margin", 5.0))
+    parser.add_argument("--no-icp-filter-statistical", action="store_true", default=config_value(config, "no_icp_filter_statistical", False))
+    parser.add_argument("--no-icp-filter-height", action="store_true", default=config_value(config, "no_icp_filter_height", False))
+    parser.add_argument("--icp-min-height-above-target-min", type=float, default=config_value(config, "icp_min_height_above_target_min", 5.0))
+    parser.add_argument("--icp-filter-nb-neighbors", type=int, default=config_value(config, "icp_filter_nb_neighbors", 30))
+    parser.add_argument("--icp-filter-std-ratio", type=float, default=config_value(config, "icp_filter_std_ratio", 2.0))
+    parser.add_argument("--no-icp", action="store_true", default=config_value(config, "no_icp", False), help="Only use manual similarity transform")
+    parser.add_argument("--no-view", action="store_true", default=config_value(config, "no_view", False), help="Do not show final overlay window")
     parser.add_argument(
         "--pick-order",
         choices=["pointcloud-first", "gaussian-first"],
-        default="pointcloud-first",
+        default=config_value(config, "pick_order", "pointcloud-first"),
         help="Manual picking order. Correspondence order must still match between the two windows.",
     )
     return parser.parse_args()

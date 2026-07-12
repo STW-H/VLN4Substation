@@ -1,0 +1,11 @@
+# Default arguments for tools/preprocessing/render_pointcloud_ortho_image.py
+
+input: substation_vln/data/processed/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled_real_coords_axis_corrected.ply
+output: substation_vln/outputs/220kv_erfeishan/annotation/axis_corrected_pointcloud_ortho_8k.png
+metadata: substation_vln/outputs/220kv_erfeishan/annotation/axis_corrected_pointcloud_ortho_8k.json
+min_resolution: 8192
+margin: 2.0
+camera_side: zplus
+background: [1.0, 1.0, 1.0]
+chunk_size: 1000000
+point_radius: 0
