@@ -57,6 +57,7 @@ def make_display_image(layers: dict[str, np.ndarray], cost_map: np.ndarray) -> n
     image[free] = cv2.addWeighted(image[free], 0.35, heat[free], 0.65, 0.0)
     image[layers["preferred_road_mask"] > 0] = (255, 190, 80)
     image[layers["preferred_path_mask"] > 0] = (255, 60, 220)
+    image[layers["narrow_space_mask"] > 0] = (180, 60, 180)
     image[layers["inflated_obstacle_mask"] > 0] = (95, 95, 235)
     image[layers["obstacle_mask"] > 0] = (30, 30, 210)
     return image

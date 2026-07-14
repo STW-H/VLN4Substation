@@ -72,6 +72,7 @@ def build_base_masks(payload: dict[str, Any], grid: GridSpec, preferred_path_wid
     obstacle_mask = empty_mask(grid)
     preferred_road_mask = empty_mask(grid)
     preferred_path_mask = empty_mask(grid)
+    narrow_space_mask = empty_mask(grid)
 
     for annotation in payload["annotations"]:
         category = annotation.get("category")
@@ -90,6 +91,13 @@ def build_base_masks(payload: dict[str, Any], grid: GridSpec, preferred_path_wid
         elif category == "preferred_road" and geometry_type == "multi_polygon":
             for polygon in annotation.get("polygons_xy", []):
                 fill_polygon(preferred_road_mask, grid, polygon)
+        elif category == "narrow_space":
+            if geometry_type == "multi_polygon":
+                for polygon in annotation.get("polygons_xy", []):
+                    fill_polygon(narrow_space_mask, grid, polygon)
+            elif geometry_type == "multi_circle":
+                for circle in annotation.get("circles", []):
+                    fill_circle(narrow_space_mask, grid, circle["center_xy"], float(circle["radius_xy"]))
         elif category == "preferred_path":
             if geometry_type == "multi_directed_segment":
                 for segment in annotation.get("segments", []):
@@ -104,11 +112,13 @@ def build_base_masks(payload: dict[str, Any], grid: GridSpec, preferred_path_wid
     obstacle_mask = ((obstacle_mask > 0) & (boundary_mask > 0)).astype(np.uint8)
     preferred_road_mask = ((preferred_road_mask > 0) & (boundary_mask > 0) & (obstacle_mask == 0)).astype(np.uint8)
     preferred_path_mask = ((preferred_path_mask > 0) & (boundary_mask > 0) & (obstacle_mask == 0)).astype(np.uint8)
+    narrow_space_mask = ((narrow_space_mask > 0) & (boundary_mask > 0) & (obstacle_mask == 0)).astype(np.uint8)
     return {
         "boundary_mask": boundary_mask,
         "obstacle_mask": obstacle_mask,
         "preferred_road_mask": preferred_road_mask,
         "preferred_path_mask": preferred_path_mask,
+        "narrow_space_mask": narrow_space_mask,
     }
 
 

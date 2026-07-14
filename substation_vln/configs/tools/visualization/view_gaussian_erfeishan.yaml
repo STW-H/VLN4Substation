@@ -1,8 +1,9 @@
 # Default arguments for tools/visualization/view_gaussian.py
 
-input: substation_vln/data/processed/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled_real_coords_axis_corrected.ply
+input: substation_vln/data/raw/220kv_erfeishan/gaussian/layer_2_point_cloud.ply
 width: 1920
 height: 1080
+fps: 24
 snapshot: false
 output: substation_vln/outputs/220kv_erfeishan/gaussian/snapshot.png
 viewer: external/habitat-gs/examples/gaussian_viewer.py

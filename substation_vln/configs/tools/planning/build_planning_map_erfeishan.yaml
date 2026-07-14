@@ -17,6 +17,7 @@ derived_map:
   base_cost: 1.0
   preferred_road_cost: 0.6
   preferred_path_alpha: 0.3
+  narrow_space_penalty: 1.5
   min_cost: 0.2
 
 outputs:
@@ -29,5 +30,6 @@ outputs:
   free_space_mask_png: free_space_mask.png
   preferred_road_mask_png: preferred_road_mask.png
   preferred_path_mask_png: preferred_path_mask.png
+  narrow_space_mask_png: narrow_space_mask.png
   cost_map_png: cost_map.png
   planning_overlay_png: planning_overlay.png

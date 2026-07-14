@@ -57,6 +57,7 @@ def save_overlay_png(path: Path, layers: dict[str, np.ndarray], cost_map: np.nda
     overlay[layers["boundary_mask"] > 0] = (235, 235, 235)
     overlay[layers["preferred_road_mask"] > 0] = (255, 190, 80)
     overlay[layers["preferred_path_mask"] > 0] = (255, 60, 220)
+    overlay[layers["narrow_space_mask"] > 0] = (180, 60, 180)
     overlay[layers["free_space_mask"] == 0] = (215, 215, 215)
     overlay[layers["inflated_obstacle_mask"] > 0] = (95, 95, 235)
     overlay[layers["obstacle_mask"] > 0] = (30, 30, 210)

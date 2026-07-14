@@ -973,6 +973,8 @@ class OrthoImageAnnotator:
     def save(self) -> None:
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
         payload = {
+            "schema_version": 2,
+            "annotation_kind": "ortho_2d",
             "image": str(self.image_path),
             "metadata": str(self.metadata_path),
             "saved_at": datetime.now().isoformat(timespec="seconds"),
