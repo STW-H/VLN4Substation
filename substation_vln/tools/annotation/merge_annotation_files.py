@@ -78,12 +78,17 @@ def merge_annotations(files: list[Path]) -> dict:
     merged_annotations: list[dict] = []
     source_files: list[dict] = []
     base_payload: dict | None = None
+    merged_categories: dict = {}
     review_required: dict[str, str] = {}
+    inspection_target_count = 0
+    equipment_id_map: dict[tuple[str, str], str] = {}
+    equipment_point_counts: dict[str, int] = {}
 
     for source_index, path in enumerate(files, start=1):
         payload = json.loads(path.read_text(encoding="utf-8"))
-        if base_payload is None:
+        if base_payload is None and payload.get("image") and payload.get("pixel_to_world_matrix"):
             base_payload = payload
+        merged_categories.update(payload.get("categories", {}))
         source_files.append(
             {
                 "index": source_index,
@@ -97,17 +102,49 @@ def merge_annotations(files: list[Path]) -> dict:
         for annotation in payload.get("annotations", []):
             item = dict(annotation)
             original_label = str(item.get("label", ""))
-            translated_label = translate_label(original_label)
-            if original_label in TRANSLATION_REVIEW_REQUIRED:
+            is_inspection_target = (
+                item.get("category") == "inspection_target"
+                and item.get("geometry_type") == "point_3d"
+            )
+            translated_label = original_label if is_inspection_target else translate_label(original_label)
+            if not is_inspection_target and original_label in TRANSLATION_REVIEW_REQUIRED:
                 review_required[original_label] = TRANSLATION_REVIEW_REQUIRED[original_label]
             item["source_file"] = path.name
             item["source_id"] = item.get("id")
             item["original_label"] = original_label
             item["label"] = translated_label
+            if is_inspection_target:
+                inspection_target_count += 1
+                source_target_id = str(item.get("target_id", ""))
+                merged_target_id = f"target_{inspection_target_count:03d}"
+                item["source_target_id"] = source_target_id
+                item["target_id"] = merged_target_id
+                if not item.get("label") or item.get("label") == source_target_id:
+                    item["label"] = merged_target_id
+
+                source_equipment_id = str(item.get("equipment_id", ""))
+                equipment_name = str(item.get("equipment_name", "")).strip()
+                if equipment_name:
+                    equipment_key = ("name", equipment_name)
+                else:
+                    equipment_key = (path.name, source_equipment_id or source_target_id or str(item.get("id")))
+                if equipment_key not in equipment_id_map:
+                    equipment_id_map[equipment_key] = f"equipment_{len(equipment_id_map) + 1:03d}"
+                merged_equipment_id = equipment_id_map[equipment_key]
+                item["source_equipment_id"] = source_equipment_id
+                item["equipment_id"] = merged_equipment_id
+
+                equipment_point_counts[merged_equipment_id] = equipment_point_counts.get(merged_equipment_id, 0) + 1
+                source_inspection_point_id = str(item.get("inspection_point_id", ""))
+                item["source_inspection_point_id"] = source_inspection_point_id
+                item["inspection_point_id"] = (
+                    f"{merged_equipment_id}_point_{equipment_point_counts[merged_equipment_id]:03d}"
+                )
             item["id"] = len(merged_annotations) + 1
             merged_annotations.append(item)
 
-    assert base_payload is not None
+    if base_payload is None:
+        raise SystemExit("No 2D orthographic annotation file found; cannot build merged map metadata.")
     return {
         "merged_at": datetime.now().isoformat(timespec="seconds"),
         "source_files": source_files,
@@ -117,7 +154,7 @@ def merge_annotations(files: list[Path]) -> dict:
         "pixel_to_world_matrix": base_payload.get("pixel_to_world_matrix"),
         "world_to_pixel_matrix": base_payload.get("world_to_pixel_matrix"),
         "image_size": base_payload.get("image_size"),
-        "categories": base_payload.get("categories"),
+        "categories": merged_categories,
         "obstacle_shape_options": base_payload.get("obstacle_shape_options"),
         "preferred_path_options": base_payload.get("preferred_path_options"),
         "label_translation_map": LABEL_TRANSLATIONS,

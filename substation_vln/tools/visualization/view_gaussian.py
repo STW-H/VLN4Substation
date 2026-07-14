@@ -29,6 +29,42 @@ from substation_vln.paths import (  # noqa: E402
 )
 
 
+REQUIRED_GAUSSIAN_PROPERTIES = {
+    "f_dc_0",
+    "f_dc_1",
+    "f_dc_2",
+    "opacity",
+    "scale_0",
+    "scale_1",
+    "scale_2",
+    "rot_0",
+    "rot_1",
+    "rot_2",
+    "rot_3",
+}
+
+
+def validate_gaussian_ply(path: Path) -> None:
+    with path.open("rb") as stream:
+        header = stream.read(1024 * 1024)
+    marker = b"end_header"
+    if marker not in header:
+        raise SystemExit(f"Invalid PLY header or header too large: {path}")
+    header_text = header.split(marker, 1)[0].decode("ascii", errors="ignore")
+    properties = {
+        line.split()[-1]
+        for line in header_text.splitlines()
+        if line.startswith("property ") and len(line.split()) >= 3
+    }
+    missing = sorted(REQUIRED_GAUSSIAN_PROPERTIES - properties)
+    if missing:
+        raise SystemExit(
+            "Input is an ordinary point cloud, not a 3D Gaussian PLY.\n"
+            f"  input: {path}\n"
+            f"  missing Gaussian properties: {', '.join(missing)}"
+        )
+
+
 def default_y_up_cache_path(scene: Path) -> Path:
     stem = scene.name.removesuffix(".gs.ply").removesuffix(".ply")
     return OUTPUTS_ERFEISHAN_DIR / "gaussian_yup_cache" / f"{stem}_habitat_yup.gs.ply"
@@ -57,6 +93,7 @@ def main() -> int:
     )
     parser.add_argument("--width", type=int, default=config_value(config, "width", 1920))
     parser.add_argument("--height", type=int, default=config_value(config, "height", 1080))
+    parser.add_argument("--fps", type=float, default=config_value(config, "fps", 24.0), help="Maximum interactive viewer frame rate")
     parser.add_argument("--snapshot", action="store_true", default=config_value(config, "snapshot", False), help="Render one offscreen RGB image instead of opening the viewer")
     parser.add_argument("--output", type=Path, default=config_path(config, "output", OUTPUTS_ERFEISHAN_DIR / "gaussian" / "snapshot.png"))
     parser.add_argument("--viewer", type=Path, default=config_path(config, "viewer", HABITAT_GS_VIEWER), help="Path to Habitat-GS gaussian_viewer.py")
@@ -77,6 +114,9 @@ def main() -> int:
     parser.add_argument("--pitch-deg", type=float, default=config_value(config, "pitch_deg", 0.0), help="Camera pitch for --snapshot")
     args = parser.parse_args()
 
+    if args.fps <= 0:
+        raise SystemExit(f"--fps must be positive, got {args.fps}")
+
     scene = args.input.expanduser()
     if not scene.is_absolute():
         scene = (Path.cwd() / scene).absolute()
@@ -84,6 +124,7 @@ def main() -> int:
         raise SystemExit(f"File not found: {scene}")
     if scene.suffix.lower() != ".ply":
         raise SystemExit("Habitat-GS expects a PLY Gaussian file.")
+    validate_gaussian_ply(scene)
     if args.already_y_up and not (scene.name.endswith(".gs.ply") or scene.name.endswith(".3dgs.ply")):
         print(
             "warning: Habitat-GS recognizes Gaussian stages by suffix. "
@@ -128,6 +169,8 @@ def main() -> int:
         str(args.width),
         "--height",
         str(args.height),
+        "--fps",
+        str(args.fps),
         "--start-position",
         *(str(v) for v in start_position),
         "--start-yaw-deg",

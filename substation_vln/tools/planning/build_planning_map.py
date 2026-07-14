@@ -82,6 +82,7 @@ def main() -> int:
         free_space_mask=layers["free_space_mask"],
         preferred_road_mask=layers["preferred_road_mask"],
         preferred_path_mask=layers["preferred_path_mask"],
+        narrow_space_mask=layers["narrow_space_mask"],
         distance_to_obstacle_m=layers["distance_to_obstacle_m"],
         distance_to_preferred_path_m=layers["distance_to_preferred_path_m"],
         preferred_path_attraction=layers["preferred_path_attraction"],
@@ -105,6 +106,7 @@ def main() -> int:
             "free_space_cells": int(layers["free_space_mask"].sum()),
             "preferred_road_cells": int(layers["preferred_road_mask"].sum()),
             "preferred_path_cells": int(layers["preferred_path_mask"].sum()),
+            "narrow_space_cells": int(layers["narrow_space_mask"].sum()),
         },
     }
     write_json(output_path(output_dir, outputs, "metadata"), metadata)
@@ -116,6 +118,7 @@ def main() -> int:
     save_mask_png(output_path(output_dir, outputs, "free_space_mask_png"), layers["free_space_mask"])
     save_mask_png(output_path(output_dir, outputs, "preferred_road_mask_png"), layers["preferred_road_mask"])
     save_mask_png(output_path(output_dir, outputs, "preferred_path_mask_png"), layers["preferred_path_mask"])
+    save_mask_png(output_path(output_dir, outputs, "narrow_space_mask_png"), layers["narrow_space_mask"])
     save_cost_png(output_path(output_dir, outputs, "cost_map_png"), layers["cost_map"])
     save_overlay_png(output_path(output_dir, outputs, "planning_overlay_png"), layers, layers["cost_map"])
 

@@ -46,6 +46,7 @@ def build_derived_layers(base_masks: dict[str, np.ndarray], resolution_m: float,
     obstacle_mask = base_masks["obstacle_mask"].astype(bool)
     preferred_road_mask = base_masks["preferred_road_mask"].astype(bool)
     preferred_path_mask = base_masks["preferred_path_mask"].astype(bool)
+    narrow_space_mask = base_masks["narrow_space_mask"].astype(bool)
 
     inflated_obstacle_mask = inflate_obstacles(
         obstacle_mask.astype(np.uint8),
@@ -55,6 +56,7 @@ def build_derived_layers(base_masks: dict[str, np.ndarray], resolution_m: float,
     free_space_mask = boundary_mask & (~inflated_obstacle_mask)
     preferred_road_mask = preferred_road_mask & free_space_mask
     preferred_path_mask = preferred_path_mask & free_space_mask
+    narrow_space_mask = narrow_space_mask & free_space_mask
 
     distance_to_obstacle_m = distance_to_mask(obstacle_mask.astype(np.uint8), resolution_m)
     distance_to_preferred_path_m, preferred_path_attraction_field = preferred_path_attraction(
@@ -67,6 +69,7 @@ def build_derived_layers(base_masks: dict[str, np.ndarray], resolution_m: float,
     cost_map[free_space_mask] = float(params["base_cost"])
     cost_map[preferred_road_mask] = float(params["preferred_road_cost"])
     cost_map[free_space_mask] -= float(params["preferred_path_alpha"]) * preferred_path_attraction_field[free_space_mask]
+    cost_map[narrow_space_mask] += float(params.get("narrow_space_penalty", 0.0))
     cost_map[free_space_mask] += obstacle_repulsion(
         distance_to_obstacle_m,
         float(params["obstacle_repulsion_radius_m"]),
@@ -79,6 +82,7 @@ def build_derived_layers(base_masks: dict[str, np.ndarray], resolution_m: float,
         "free_space_mask": free_space_mask.astype(np.uint8),
         "preferred_road_mask": preferred_road_mask.astype(np.uint8),
         "preferred_path_mask": preferred_path_mask.astype(np.uint8),
+        "narrow_space_mask": narrow_space_mask.astype(np.uint8),
         "distance_to_obstacle_m": distance_to_obstacle_m.astype(np.float32),
         "distance_to_preferred_path_m": distance_to_preferred_path_m.astype(np.float32),
         "preferred_path_attraction": preferred_path_attraction_field.astype(np.float32),
