@@ -18,13 +18,17 @@ SRC_ROOT = PROJECT_ROOT / "substation_vln" / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from substation_vln.config import config_path, load_yaml_config  # noqa: E402
-from substation_vln.paths import ANNOTATION_OUTPUTS_ERFEISHAN_DIR, CONFIGS_DIR  # noqa: E402
+from substation_vln.config import config_path, config_value, load_yaml_config  # noqa: E402
+from substation_vln.paths import (  # noqa: E402
+    ANNOTATIONS_ERFEISHAN_DIR,
+    ANNOTATION_SESSIONS_ERFEISHAN_DIR,
+    CONFIGS_DIR,
+    ORTHOPHOTO_ERFEISHAN_DIR,
+)
 
 
-DEFAULT_IMAGE = ANNOTATION_OUTPUTS_ERFEISHAN_DIR / "axis_corrected_pointcloud_ortho_8k.png"
-DEFAULT_OUTPUT = ANNOTATION_OUTPUTS_ERFEISHAN_DIR / "annotations_merged.json"
-DEFAULT_REVIEW = ANNOTATION_OUTPUTS_ERFEISHAN_DIR / "annotations_merged_review.png"
+DEFAULT_IMAGE = ORTHOPHOTO_ERFEISHAN_DIR / "axis_corrected_pointcloud_ortho_8k.png"
+DEFAULT_OUTPUT = ANNOTATIONS_ERFEISHAN_DIR / "annotations_merged.json"
 DEFAULT_CONFIG = CONFIGS_DIR / "tools" / "annotation" / "merge_annotation_files_erfeishan.yaml"
 
 LABEL_TRANSLATIONS = {
@@ -80,9 +84,6 @@ def merge_annotations(files: list[Path]) -> dict:
     base_payload: dict | None = None
     merged_categories: dict = {}
     review_required: dict[str, str] = {}
-    inspection_target_count = 0
-    equipment_id_map: dict[tuple[str, str], str] = {}
-    equipment_point_counts: dict[str, int] = {}
 
     for source_index, path in enumerate(files, start=1):
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -102,44 +103,13 @@ def merge_annotations(files: list[Path]) -> dict:
         for annotation in payload.get("annotations", []):
             item = dict(annotation)
             original_label = str(item.get("label", ""))
-            is_inspection_target = (
-                item.get("category") == "inspection_target"
-                and item.get("geometry_type") == "point_3d"
-            )
-            translated_label = original_label if is_inspection_target else translate_label(original_label)
-            if not is_inspection_target and original_label in TRANSLATION_REVIEW_REQUIRED:
+            translated_label = translate_label(original_label)
+            if original_label in TRANSLATION_REVIEW_REQUIRED:
                 review_required[original_label] = TRANSLATION_REVIEW_REQUIRED[original_label]
             item["source_file"] = path.name
             item["source_id"] = item.get("id")
             item["original_label"] = original_label
             item["label"] = translated_label
-            if is_inspection_target:
-                inspection_target_count += 1
-                source_target_id = str(item.get("target_id", ""))
-                merged_target_id = f"target_{inspection_target_count:03d}"
-                item["source_target_id"] = source_target_id
-                item["target_id"] = merged_target_id
-                if not item.get("label") or item.get("label") == source_target_id:
-                    item["label"] = merged_target_id
-
-                source_equipment_id = str(item.get("equipment_id", ""))
-                equipment_name = str(item.get("equipment_name", "")).strip()
-                if equipment_name:
-                    equipment_key = ("name", equipment_name)
-                else:
-                    equipment_key = (path.name, source_equipment_id or source_target_id or str(item.get("id")))
-                if equipment_key not in equipment_id_map:
-                    equipment_id_map[equipment_key] = f"equipment_{len(equipment_id_map) + 1:03d}"
-                merged_equipment_id = equipment_id_map[equipment_key]
-                item["source_equipment_id"] = source_equipment_id
-                item["equipment_id"] = merged_equipment_id
-
-                equipment_point_counts[merged_equipment_id] = equipment_point_counts.get(merged_equipment_id, 0) + 1
-                source_inspection_point_id = str(item.get("inspection_point_id", ""))
-                item["source_inspection_point_id"] = source_inspection_point_id
-                item["inspection_point_id"] = (
-                    f"{merged_equipment_id}_point_{equipment_point_counts[merged_equipment_id]:03d}"
-                )
             item["id"] = len(merged_annotations) + 1
             merged_annotations.append(item)
 
@@ -245,7 +215,7 @@ def annotation_label_position(annotation: dict) -> tuple[int, int] | None:
     return None
 
 
-def draw_review(image_path: Path, merged_payload: dict, review_path: Path) -> None:
+def draw_review(image_path: Path, merged_payload: dict, review_path: Path, max_resolution: int) -> None:
     image = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
     if image is None:
         raise SystemExit(f"Failed to read image: {image_path}")
@@ -295,6 +265,16 @@ def draw_review(image_path: Path, merged_payload: dict, review_path: Path) -> No
             color = CATEGORY_COLORS_BGR.get(annotation.get("category"), tuple(annotation.get("color_bgr", [255, 255, 255])))
             draw_label(image, str(annotation.get("label", "")), position, color)
 
+    if max_resolution <= 0:
+        raise ValueError("review_max_resolution must be positive")
+    height, width = image.shape[:2]
+    scale = min(1.0, max_resolution / max(width, height))
+    if scale < 1.0:
+        image = cv2.resize(
+            image,
+            (max(1, int(round(width * scale))), max(1, int(round(height * scale)))),
+            interpolation=cv2.INTER_AREA,
+        )
     review_path.parent.mkdir(parents=True, exist_ok=True)
     cv2.imwrite(str(review_path), image)
 
@@ -320,20 +300,26 @@ def main() -> int:
     config = load_yaml_config(pre_args.config)
 
     parser = argparse.ArgumentParser(description="Merge split 2D annotation JSON files.", parents=[pre_parser])
-    parser.add_argument("--annotation-dir", type=Path, default=config_path(config, "annotation_dir", ANNOTATION_OUTPUTS_ERFEISHAN_DIR))
+    parser.add_argument("--annotation-dir", type=Path, default=config_path(config, "annotation_dir", ANNOTATION_SESSIONS_ERFEISHAN_DIR))
     parser.add_argument("--image", type=Path, default=config_path(config, "image", DEFAULT_IMAGE))
     parser.add_argument("--output", type=Path, default=config_path(config, "output", DEFAULT_OUTPUT))
-    parser.add_argument("--review-image", type=Path, default=config_path(config, "review_image", DEFAULT_REVIEW))
+    parser.add_argument(
+        "--review-max-resolution",
+        type=int,
+        default=config_value(config, "review_max_resolution", 2048),
+        help="Maximum width or height of the merged review thumbnail.",
+    )
     args = parser.parse_args()
 
     files = load_annotation_files(args.annotation_dir)
     merged_payload = merge_annotations(files)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(merged_payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    draw_review(args.image, merged_payload, args.review_image)
+    review_image = args.output.with_suffix(".png")
+    draw_review(args.image, merged_payload, review_image, args.review_max_resolution)
     summarize(merged_payload)
     print(f"Saved merged annotations: {args.output}")
-    print(f"Saved merged review image: {args.review_image}")
+    print(f"Saved merged review thumbnail: {review_image}")
     return 0
 
 

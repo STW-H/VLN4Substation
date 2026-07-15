@@ -9,3 +9,6 @@ substation_vln/outputs/220kv_erfeishan/
 *.LiData
 __pycache__/
 *.pyc
+.env
+.env.*
+!.env.example

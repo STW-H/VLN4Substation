@@ -62,7 +62,7 @@ substation_vln/configs/tools/planning/run_baseline_astar_erfeishan.yaml
 默认输入：
 
 ```text
-substation_vln/outputs/220kv_erfeishan/annotation/annotations_merged.json
+substation_vln/data/annotations/220kv_erfeishan/annotations_merged.json
 ```
 
 二维规划使用以下类别：
@@ -369,7 +369,7 @@ free_space_mask == 1
 cost_map为有限值
 ```
 
-否则程序直接报告该点不可通行。当前新标注中有4个 `transformer` 停靠点位于膨胀障碍内，不适合作为固定点 A* 终点。
+否则程序直接报告该点不可通行。固定点仅用于标准A*基线实验；主方法不再把人工固定点作为设备巡视终点。
 
 ## 8. 参数设置位置
 
@@ -442,7 +442,7 @@ conda run -n habitat-gs python \
 检查：
 
 ```text
-substation_vln/outputs/220kv_erfeishan/annotation/annotations_merged_review.png
+substation_vln/outputs/220kv_erfeishan/annotation_reviews/annotations_merged_review.png
 ```
 
 ### 9.2 构建规划地图
@@ -549,4 +549,4 @@ A*参数
 - 当前 `cost_map` 在地图构建时固定，尚未实现任务与环境上下文驱动的运行时代价生成；
 - 5厘米大地图上的纯Python字典A*在长距离任务中扩展节点较多，后续需要优化内存结构或采用多分辨率搜索。
 
-后续区域目标 A* 将保持同一硬安全空间和语义代价定义，只把固定终点替换为 `feasible_inspection_region_mask`，并使用到目标区域的距离变换作为启发函数。
+后续区域目标 A* 将保持同一硬安全空间和语义代价定义，只把固定终点替换为 `inspection_approach_region_mask`，并使用到目标区域的距离变换作为启发函数。

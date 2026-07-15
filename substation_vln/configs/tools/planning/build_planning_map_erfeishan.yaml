@@ -1,7 +1,7 @@
 # Default arguments and map parameters for tools/planning/build_planning_map.py
 
 paths:
-  annotation: substation_vln/outputs/220kv_erfeishan/annotation/annotations_merged.json
+  annotation: substation_vln/data/annotations/220kv_erfeishan/annotations_merged.json
   output_dir: substation_vln/outputs/220kv_erfeishan/planning/maps
 
 base_map:

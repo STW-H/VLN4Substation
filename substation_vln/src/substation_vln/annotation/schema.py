@@ -14,6 +14,13 @@ CATEGORIES = {
     "4": {"key": "planning_boundary", "name": "规划边界", "default_label": "planning_boundary", "geometry": "polygon", "single": True},
     "5": {"key": "preferred_path", "name": "优先路径", "default_label": "preferred_path", "geometry": "directed_polyline"},
     "6": {"key": "narrow_space", "name": "狭窄空间", "default_label": "narrow_space", "geometry": "polygon"},
+    "7": {"key": "equipment_region", "name": "设备占地区域", "default_label": "equipment", "geometry": "polygon"},
+    "8": {
+        "key": "inspection_approach_region",
+        "name": "人工可停靠范围",
+        "default_label": "inspection_approach_region",
+        "geometry": "polygon",
+    },
 }
 
 LABEL_COLORS_BGR = [

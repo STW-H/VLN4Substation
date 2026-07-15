@@ -18,11 +18,11 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from substation_vln.config import config_path, config_value, load_yaml_config  # noqa: E402
-from substation_vln.paths import ANNOTATION_OUTPUTS_ERFEISHAN_DIR, CONFIGS_DIR, DEFAULT_AXIS_CORRECTED_POINTCLOUD  # noqa: E402
+from substation_vln.paths import CONFIGS_DIR, DEFAULT_AXIS_CORRECTED_POINTCLOUD, ORTHOPHOTO_ERFEISHAN_DIR  # noqa: E402
 from substation_vln.preprocessing.pointcloud_io import binary_ply_dtype, parse_binary_ply_vertex  # noqa: E402
 
 
-DEFAULT_OUTPUT = ANNOTATION_OUTPUTS_ERFEISHAN_DIR / "axis_corrected_pointcloud_ortho_8k.png"
+DEFAULT_OUTPUT = ORTHOPHOTO_ERFEISHAN_DIR / "axis_corrected_pointcloud_ortho_8k.png"
 DEFAULT_CONFIG = CONFIGS_DIR / "tools" / "preprocessing" / "render_pointcloud_ortho_image_erfeishan.yaml"
 
 

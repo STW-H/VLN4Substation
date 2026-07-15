@@ -866,10 +866,62 @@ class OrthoImageAnnotator:
             print(f"{category['name']}只能标注一次，已忽略本次标注。")
             return False
 
-        default_label = category["default_label"]
         cv2.imshow(self.window_name, self.render_view())
         cv2.waitKey(1)
-        label = input(f"{category['name']} label [{default_label}]: ").strip() or default_label
+        equipment_fields: dict = {}
+        if category["key"] in ("equipment_region", "inspection_approach_region"):
+            equipment_name = input("设备名称（应与操作票中的名称一致）: ").strip()
+            while not equipment_name:
+                print("设备名称不能为空。")
+                equipment_name = input("设备名称: ").strip()
+            equipment_type = input("设备类型 [unknown_device]: ").strip() or "unknown_device"
+            label = equipment_name
+            equipment_fields = {
+                "equipment_name": equipment_name,
+                "equipment_type": equipment_type,
+            }
+            if category["key"] == "equipment_region":
+                approach_method = choose_numbered_option(
+                    prompt="请选择该设备可停靠范围的生成方式",
+                    options={
+                        "1": {"key": "equipment_buffer", "name": "按设备区域向外扩展"},
+                        "2": {"key": "manual", "name": "稍后手工标注可停靠范围"},
+                    },
+                    quit_label="按设备区域向外扩展",
+                    default_quit=True,
+                )
+                method = approach_method["key"] if approach_method else "equipment_buffer"
+                approach_rule = {"generation_method": method}
+                if method == "equipment_buffer":
+                    min_distance = self.prompt_distance(
+                        "设备边缘至停靠区域的最小距离/m",
+                        self.args.default_approach_min_distance_m,
+                    )
+                    max_distance = self.prompt_distance(
+                        "设备边缘至停靠区域的最大距离/m",
+                        self.args.default_approach_max_distance_m,
+                    )
+                    while max_distance <= min_distance:
+                        print("最大距离必须大于最小距离。")
+                        max_distance = self.prompt_distance(
+                            "设备边缘至停靠区域的最大距离/m",
+                            self.args.default_approach_max_distance_m,
+                        )
+                    approach_rule.update(
+                        {
+                            "min_distance_m": min_distance,
+                            "max_distance_m": max_distance,
+                            "operation": "buffer(max_distance_m) - buffer(min_distance_m)",
+                            "clip_to_planning_free_space": True,
+                        }
+                    )
+                equipment_fields["approach_region"] = approach_rule
+            else:
+                equipment_fields["generation_method"] = "manual"
+                equipment_fields["clip_to_planning_free_space"] = True
+        else:
+            default_label = category["default_label"]
+            label = input(f"{category['name']} label [{default_label}]: ").strip() or default_label
         annotation_id = len(self.annotations) + 1
         color = LABEL_COLORS_BGR[(annotation_id - 1) % len(LABEL_COLORS_BGR)]
         annotation = make_annotation(
@@ -880,6 +932,7 @@ class OrthoImageAnnotator:
             pixel_to_world=self.pixel_to_world,
             color_bgr=color,
         )
+        annotation.update(equipment_fields)
 
         if annotation["geometry_type"] == "directed_point":
             print(
@@ -931,6 +984,22 @@ class OrthoImageAnnotator:
         self.pending_annotation = None
         print(f"Confirmed annotation #{annotation_id}: category={category['key']}, label={label}")
         return True
+
+    @staticmethod
+    def prompt_distance(prompt: str, default: float) -> float:
+        while True:
+            raw = input(f"{prompt} [{default:g}]: ").strip()
+            if not raw:
+                return float(default)
+            try:
+                value = float(raw)
+            except ValueError:
+                print("请输入有效数字。")
+                continue
+            if not np.isfinite(value) or value < 0:
+                print("请输入非负有限数值。")
+                continue
+            return value
 
     def confirm_annotation(self) -> bool:
         return ask_yes_no("确认保存该标注结果？", default=True)
@@ -1040,9 +1109,20 @@ class OrthoImageAnnotator:
                 cv2.fillPoly(overlay, [pts], color)
                 review = cv2.addWeighted(overlay, 0.18, review, 0.82, 0.0)
                 cv2.polylines(review, [pts], isClosed=True, color=color, thickness=max(3, int(self.args.line_width * 2)))
+        max_resolution = int(self.args.review_max_resolution)
+        if max_resolution <= 0:
+            raise ValueError("review_max_resolution must be positive")
+        height, width = review.shape[:2]
+        scale = min(1.0, max_resolution / max(width, height))
+        if scale < 1.0:
+            review = cv2.resize(
+                review,
+                (max(1, int(round(width * scale))), max(1, int(round(height * scale)))),
+                interpolation=cv2.INTER_AREA,
+            )
         self.review_path.parent.mkdir(parents=True, exist_ok=True)
         cv2.imwrite(str(self.review_path), review)
-        print(f"Saved review image: {self.review_path}")
+        print(f"Saved review thumbnail: {self.review_path} ({review.shape[1]} x {review.shape[0]})")
 
     def draw_review_circle(self, image: np.ndarray, center_pixel: list[float], radius_pixel: float, color: tuple[int, int, int]) -> None:
         center = tuple(np.asarray(center_pixel, dtype=np.int32))
@@ -1082,7 +1162,12 @@ class OrthoImageAnnotator:
             path_category["path_type"] = path_type["key"]
             path_category["path_type_name"] = path_type["name"]
             return path_category
-        if category["key"] not in ("obstacle", "narrow_space"):
+        if category["key"] not in (
+            "obstacle",
+            "narrow_space",
+            "equipment_region",
+            "inspection_approach_region",
+        ):
             return category
 
         shape = choose_numbered_option(

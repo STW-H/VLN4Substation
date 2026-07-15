@@ -1,6 +1,6 @@
 # Default arguments for tools/annotation/merge_annotation_files.py
 
-annotation_dir: substation_vln/outputs/220kv_erfeishan/annotation
-image: substation_vln/outputs/220kv_erfeishan/annotation/axis_corrected_pointcloud_ortho_8k.png
-output: substation_vln/outputs/220kv_erfeishan/annotation/annotations_merged.json
-review_image: substation_vln/outputs/220kv_erfeishan/annotation/annotations_merged_review.png
+annotation_dir: substation_vln/data/annotations/220kv_erfeishan/sessions
+image: substation_vln/data/processed/220kv_erfeishan/orthophoto/axis_corrected_pointcloud_ortho_8k.png
+output: substation_vln/data/annotations/220kv_erfeishan/annotations_merged.json
+review_max_resolution: 2048

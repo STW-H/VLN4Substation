@@ -1,12 +1,8 @@
 # Default arguments for tools/annotation/annotate.py
 
-# choose: show a mode menu; map: 2D semantics; target3d: 3D inspection targets.
-mode: choose
-
-image: substation_vln/outputs/220kv_erfeishan/annotation/axis_corrected_pointcloud_ortho_8k.png
-metadata: substation_vln/outputs/220kv_erfeishan/annotation/axis_corrected_pointcloud_ortho_8k.json
+image: substation_vln/data/processed/220kv_erfeishan/orthophoto/axis_corrected_pointcloud_ortho_8k.png
+metadata: substation_vln/data/processed/220kv_erfeishan/orthophoto/axis_corrected_pointcloud_ortho_8k.json
 output: null
-review_image: null
 
 window_width: 1200
 window_height: 0
@@ -22,27 +18,6 @@ min_pixel_area: 16.0
 min_direction_pixel_length: 8.0
 default_circle_radius_m: 0.5
 display_interpolation: auto
-
-# 3D inspection-target annotation.
-pointcloud: substation_vln/data/processed/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled_real_coords_axis_corrected.ply
-# 0 means loading and displaying the complete point cloud for precise target picking.
-max_display_points: 0
-point_size: 3.0
-# Display-only enhancement. It never changes point coordinates or saved annotations.
-display_color_contrast: 1.2
-display_color_brightness: 0.05
-display_background_color: [0.005, 0.005, 0.005, 1.0]
-selection_marker_point_size: 8.0
-review_sphere_radius_m: 0.3
-ground_z_m: 0.0
-camera_height_m: 1.0
-default_equipment_type: unknown_device
-default_task_type: visual_inspection
-default_min_distance_m: 5.0
-default_max_distance_m: 20.0
-default_exclusion_radius_m: 0.1
-prompt_target_id: false
-prompt_task_type: false
-prompt_observation_parameters: false
-no_resume: false
-no_review: false
+review_max_resolution: 2048
+default_approach_min_distance_m: 1.0
+default_approach_max_distance_m: 8.0
