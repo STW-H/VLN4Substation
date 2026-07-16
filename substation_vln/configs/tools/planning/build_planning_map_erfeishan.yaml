@@ -12,8 +12,8 @@ base_map:
 derived_map:
   obstacle_inflation_radius_m: 0.4
   preferred_path_sigma_m: 1.5
-  obstacle_repulsion_radius_m: 1.0
-  obstacle_repulsion_weight: 0.8
+  obstacle_repulsion_radius_m: 1.5
+  obstacle_repulsion_weight: 2.0
   base_cost: 1.0
   preferred_road_cost: 0.6
   preferred_path_alpha: 0.3
@@ -24,6 +24,7 @@ outputs:
   npz: planning_map.npz
   metadata: planning_map_metadata.json
   patrol_points: patrol_points.json
+  equipment_regions: equipment_regions.json
   boundary_mask_png: boundary_mask.png
   obstacle_mask_png: obstacle_mask.png
   inflated_obstacle_mask_png: inflated_obstacle_mask.png
@@ -31,5 +32,7 @@ outputs:
   preferred_road_mask_png: preferred_road_mask.png
   preferred_path_mask_png: preferred_path_mask.png
   narrow_space_mask_png: narrow_space_mask.png
+  equipment_mask_png: equipment_mask.png
   cost_map_png: cost_map.png
+  pose_cost_map_png: pose_cost_map.png
   planning_overlay_png: planning_overlay.png

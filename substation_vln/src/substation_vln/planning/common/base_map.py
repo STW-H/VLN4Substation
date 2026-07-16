@@ -73,6 +73,9 @@ def build_base_masks(payload: dict[str, Any], grid: GridSpec, preferred_path_wid
     preferred_road_mask = empty_mask(grid)
     preferred_path_mask = empty_mask(grid)
     narrow_space_mask = empty_mask(grid)
+    equipment_mask = empty_mask(grid)
+    equipment_index_mask = np.zeros((grid.height, grid.width), dtype=np.int32)
+    equipment_index = 0
 
     for annotation in payload["annotations"]:
         category = annotation.get("category")
@@ -107,19 +110,65 @@ def build_base_masks(payload: dict[str, Any], grid: GridSpec, preferred_path_wid
                     draw_polyline(preferred_path_mask, grid, polyline["polyline_xy"], preferred_path_width_m)
             elif geometry_type in ("directed_polyline", "polyline"):
                 draw_polyline(preferred_path_mask, grid, annotation["polyline_xy"], preferred_path_width_m)
+        elif category == "equipment_region":
+            equipment_index += 1
+            if geometry_type == "multi_polygon":
+                for polygon in annotation.get("polygons_xy", []):
+                    fill_polygon(equipment_mask, grid, polygon)
+                    fill_polygon(equipment_index_mask, grid, polygon, value=equipment_index)
+            elif geometry_type == "multi_circle":
+                for circle in annotation.get("circles", []):
+                    fill_circle(equipment_mask, grid, circle["center_xy"], float(circle["radius_xy"]))
+                    fill_circle(
+                        equipment_index_mask,
+                        grid,
+                        circle["center_xy"],
+                        float(circle["radius_xy"]),
+                        value=equipment_index,
+                    )
+            else:
+                raise ValueError(f"Unsupported equipment geometry: {geometry_type}")
 
     boundary_mask = (boundary_mask > 0).astype(np.uint8)
     obstacle_mask = ((obstacle_mask > 0) & (boundary_mask > 0)).astype(np.uint8)
     preferred_road_mask = ((preferred_road_mask > 0) & (boundary_mask > 0) & (obstacle_mask == 0)).astype(np.uint8)
     preferred_path_mask = ((preferred_path_mask > 0) & (boundary_mask > 0) & (obstacle_mask == 0)).astype(np.uint8)
     narrow_space_mask = ((narrow_space_mask > 0) & (boundary_mask > 0) & (obstacle_mask == 0)).astype(np.uint8)
+    equipment_mask = ((equipment_mask > 0) & (boundary_mask > 0)).astype(np.uint8)
+    equipment_index_mask = np.where(boundary_mask > 0, equipment_index_mask, 0).astype(np.int32)
     return {
         "boundary_mask": boundary_mask,
         "obstacle_mask": obstacle_mask,
         "preferred_road_mask": preferred_road_mask,
         "preferred_path_mask": preferred_path_mask,
         "narrow_space_mask": narrow_space_mask,
+        "equipment_mask": equipment_mask,
+        "equipment_index_mask": equipment_index_mask,
     }
+
+
+def extract_equipment_regions(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return stable equipment identity and footprint geometry in raster index order."""
+    equipment: list[dict[str, Any]] = []
+    for annotation in payload["annotations"]:
+        if annotation.get("category") != "equipment_region":
+            continue
+        equipment.append(
+            {
+                "equipment_index": len(equipment) + 1,
+                "annotation_id": annotation.get("id"),
+                "source_file": annotation.get("source_file"),
+                "source_id": annotation.get("source_id"),
+                "equipment_name": annotation.get("equipment_name") or annotation.get("label"),
+                "equipment_type": annotation.get("equipment_type") or "unknown",
+                "geometry_type": annotation.get("geometry_type"),
+                "polygons_xy": annotation.get("polygons_xy", []),
+                "circles": annotation.get("circles", []),
+                "bbox_xy": annotation.get("bbox_xy"),
+                "area_xy": annotation.get("area_xy"),
+            }
+        )
+    return equipment
 
 
 def extract_patrol_points(payload: dict[str, Any]) -> list[dict[str, Any]]:

@@ -17,6 +17,8 @@
 8. 正射图交互标注与多次标注合并
 9. 规划边界、障碍物、道路和有向/无向路径地图构建
 10. 交互式 baseline A* 链路测试
+11. 相机成像约束下的巡视目标位姿区域生成
+12. 矩形机器狗区域目标位姿 A*
 ```
 
 当前算法思路见：
@@ -229,13 +231,25 @@ python substation_vln/tools/planning/build_planning_map.py \
 python substation_vln/tools/planning/run_baseline_astar.py
 ```
 
+生成设备的相机可行目标位姿区域：
+
+```bash
+python substation_vln/tools/planning/build_inspection_goal_regions.py
+```
+
+运行区域目标位姿 A*：
+
+```bash
+python substation_vln/tools/planning/run_region_goal_astar.py
+```
+
 每个 `tools` 脚本都有对应的默认 YAML 配置，统一放在：
 
 ```text
 substation_vln/configs/tools/
 ```
 
-默认输出到：
+规划中间结果默认输出到：
 
 ```text
 substation_vln/outputs/220kv_erfeishan/planning/maps/
@@ -247,6 +261,8 @@ baseline A* 测试结果默认输出到：
 substation_vln/outputs/220kv_erfeishan/planning/baseline_astar/
 ```
 
+`outputs/` 是可重新生成的运行结果，默认不提交 Git。
+
 ## Git Policy
 
 点云、高斯文件、渲染输出和外部依赖体积较大，默认不提交到 Git。建议 `.gitignore` 保留：
@@ -255,11 +271,7 @@ substation_vln/outputs/220kv_erfeishan/planning/baseline_astar/
 external/
 substation_vln/data/raw/
 substation_vln/data/processed/
-substation_vln/outputs/*
-!substation_vln/outputs/220kv_erfeishan/
-substation_vln/outputs/220kv_erfeishan/*
-!substation_vln/outputs/220kv_erfeishan/planning/
-!substation_vln/outputs/220kv_erfeishan/planning/**
+substation_vln/outputs/
 *.ply
 *.las
 *.laz
@@ -278,5 +290,4 @@ substation_vln/docs/
 substation_vln/src/
 substation_vln/tools/
 substation_vln/configs/
-substation_vln/outputs/220kv_erfeishan/planning/
 ```

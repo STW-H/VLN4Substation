@@ -47,6 +47,7 @@ def build_derived_layers(base_masks: dict[str, np.ndarray], resolution_m: float,
     preferred_road_mask = base_masks["preferred_road_mask"].astype(bool)
     preferred_path_mask = base_masks["preferred_path_mask"].astype(bool)
     narrow_space_mask = base_masks["narrow_space_mask"].astype(bool)
+    equipment_mask = base_masks.get("equipment_mask", np.zeros_like(boundary_mask)).astype(bool)
 
     inflated_obstacle_mask = inflate_obstacles(
         obstacle_mask.astype(np.uint8),
@@ -77,6 +78,35 @@ def build_derived_layers(base_masks: dict[str, np.ndarray], resolution_m: float,
     )[free_space_mask]
     cost_map[free_space_mask] = np.maximum(cost_map[free_space_mask], float(params["min_cost"]))
 
+    # Pose-aware planning checks the complete rotated rectangle separately, so its
+    # center cost map must not turn the baseline circular inflation band into a
+    # second hard constraint. Obstacles/equipment remain hard through pose masks;
+    # proximity to raw obstacles remains a soft repulsion cost here.
+    pose_center_space_mask = boundary_mask & (~obstacle_mask) & (~equipment_mask)
+    pose_road_mask = base_masks["preferred_road_mask"].astype(bool) & pose_center_space_mask
+    pose_path_mask = base_masks["preferred_path_mask"].astype(bool) & pose_center_space_mask
+    pose_narrow_mask = base_masks["narrow_space_mask"].astype(bool) & pose_center_space_mask
+    _, pose_path_attraction = preferred_path_attraction(
+        pose_path_mask.astype(np.uint8),
+        resolution_m,
+        float(params["preferred_path_sigma_m"]),
+    )
+    pose_cost_map = np.full(boundary_mask.shape, np.inf, dtype=np.float32)
+    pose_cost_map[pose_center_space_mask] = float(params["base_cost"])
+    pose_cost_map[pose_road_mask] = float(params["preferred_road_cost"])
+    pose_cost_map[pose_center_space_mask] -= (
+        float(params["preferred_path_alpha"]) * pose_path_attraction[pose_center_space_mask]
+    )
+    pose_cost_map[pose_narrow_mask] += float(params.get("narrow_space_penalty", 0.0))
+    pose_cost_map[pose_center_space_mask] += obstacle_repulsion(
+        distance_to_obstacle_m,
+        float(params["obstacle_repulsion_radius_m"]),
+        float(params["obstacle_repulsion_weight"]),
+    )[pose_center_space_mask]
+    pose_cost_map[pose_center_space_mask] = np.maximum(
+        pose_cost_map[pose_center_space_mask], float(params["min_cost"])
+    )
+
     return {
         "inflated_obstacle_mask": inflated_obstacle_mask.astype(np.uint8),
         "free_space_mask": free_space_mask.astype(np.uint8),
@@ -87,4 +117,6 @@ def build_derived_layers(base_masks: dict[str, np.ndarray], resolution_m: float,
         "distance_to_preferred_path_m": distance_to_preferred_path_m.astype(np.float32),
         "preferred_path_attraction": preferred_path_attraction_field.astype(np.float32),
         "cost_map": cost_map,
+        "pose_center_space_mask": pose_center_space_mask.astype(np.uint8),
+        "pose_cost_map": pose_cost_map,
     }

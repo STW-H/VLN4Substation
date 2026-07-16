@@ -46,7 +46,7 @@ def main() -> int:
     config = load_yaml_config(pre_args.config)
 
     parser = argparse.ArgumentParser(
-        description="Annotate 2D map semantics, equipment footprints, and inspection approach regions.",
+        description="Annotate 2D map semantics and inspection-equipment footprints.",
         parents=[pre_parser],
     )
     parser.add_argument("image", type=Path, nargs="?", default=config_path(config, "image", DEFAULT_IMAGE))
@@ -114,18 +114,6 @@ def main() -> int:
         choices=("auto", "nearest", "linear", "area", "cubic", "lanczos"),
         default=config_value(config, "display_interpolation", "auto"),
         help="Interpolation used for the OpenCV display view. auto uses AREA when downsampling and LANCZOS when zooming in.",
-    )
-    parser.add_argument(
-        "--default-approach-min-distance-m",
-        type=float,
-        default=config_value(config, "default_approach_min_distance_m", 1.0),
-        help="Default inner clearance of an automatically expanded equipment approach region.",
-    )
-    parser.add_argument(
-        "--default-approach-max-distance-m",
-        type=float,
-        default=config_value(config, "default_approach_max_distance_m", 8.0),
-        help="Default outer distance of an automatically expanded equipment approach region.",
     )
     parser.add_argument(
         "--review-max-resolution",

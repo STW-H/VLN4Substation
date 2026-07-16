@@ -869,7 +869,7 @@ class OrthoImageAnnotator:
         cv2.imshow(self.window_name, self.render_view())
         cv2.waitKey(1)
         equipment_fields: dict = {}
-        if category["key"] in ("equipment_region", "inspection_approach_region"):
+        if category["key"] == "equipment_region":
             equipment_name = input("设备名称（应与操作票中的名称一致）: ").strip()
             while not equipment_name:
                 print("设备名称不能为空。")
@@ -880,45 +880,6 @@ class OrthoImageAnnotator:
                 "equipment_name": equipment_name,
                 "equipment_type": equipment_type,
             }
-            if category["key"] == "equipment_region":
-                approach_method = choose_numbered_option(
-                    prompt="请选择该设备可停靠范围的生成方式",
-                    options={
-                        "1": {"key": "equipment_buffer", "name": "按设备区域向外扩展"},
-                        "2": {"key": "manual", "name": "稍后手工标注可停靠范围"},
-                    },
-                    quit_label="按设备区域向外扩展",
-                    default_quit=True,
-                )
-                method = approach_method["key"] if approach_method else "equipment_buffer"
-                approach_rule = {"generation_method": method}
-                if method == "equipment_buffer":
-                    min_distance = self.prompt_distance(
-                        "设备边缘至停靠区域的最小距离/m",
-                        self.args.default_approach_min_distance_m,
-                    )
-                    max_distance = self.prompt_distance(
-                        "设备边缘至停靠区域的最大距离/m",
-                        self.args.default_approach_max_distance_m,
-                    )
-                    while max_distance <= min_distance:
-                        print("最大距离必须大于最小距离。")
-                        max_distance = self.prompt_distance(
-                            "设备边缘至停靠区域的最大距离/m",
-                            self.args.default_approach_max_distance_m,
-                        )
-                    approach_rule.update(
-                        {
-                            "min_distance_m": min_distance,
-                            "max_distance_m": max_distance,
-                            "operation": "buffer(max_distance_m) - buffer(min_distance_m)",
-                            "clip_to_planning_free_space": True,
-                        }
-                    )
-                equipment_fields["approach_region"] = approach_rule
-            else:
-                equipment_fields["generation_method"] = "manual"
-                equipment_fields["clip_to_planning_free_space"] = True
         else:
             default_label = category["default_label"]
             label = input(f"{category['name']} label [{default_label}]: ").strip() or default_label
@@ -984,22 +945,6 @@ class OrthoImageAnnotator:
         self.pending_annotation = None
         print(f"Confirmed annotation #{annotation_id}: category={category['key']}, label={label}")
         return True
-
-    @staticmethod
-    def prompt_distance(prompt: str, default: float) -> float:
-        while True:
-            raw = input(f"{prompt} [{default:g}]: ").strip()
-            if not raw:
-                return float(default)
-            try:
-                value = float(raw)
-            except ValueError:
-                print("请输入有效数字。")
-                continue
-            if not np.isfinite(value) or value < 0:
-                print("请输入非负有限数值。")
-                continue
-            return value
 
     def confirm_annotation(self) -> bool:
         return ask_yes_no("确认保存该标注结果？", default=True)
@@ -1166,7 +1111,6 @@ class OrthoImageAnnotator:
             "obstacle",
             "narrow_space",
             "equipment_region",
-            "inspection_approach_region",
         ):
             return category
 

@@ -392,8 +392,8 @@ substation_vln/configs/tools/planning/build_planning_map_erfeishan.yaml
 | `derived_map.preferred_path_sigma_m` | 优先路径吸引场尺度 | `1.5` |
 | `derived_map.preferred_path_alpha` | 优先路径吸引强度 | `0.3` |
 | `derived_map.narrow_space_penalty` | 狭窄空间附加代价 | `1.5` |
-| `derived_map.obstacle_repulsion_radius_m` | 障碍软排斥半径 | `1.0` |
-| `derived_map.obstacle_repulsion_weight` | 障碍软排斥权重 | `0.8` |
+| `derived_map.obstacle_repulsion_radius_m` | 障碍软排斥半径 | `1.5` |
+| `derived_map.obstacle_repulsion_weight` | 障碍软排斥权重 | `2.0` |
 | `derived_map.base_cost` | 普通自由空间基础代价 | `1.0` |
 | `derived_map.preferred_road_cost` | 道路区域基础代价 | `0.6` |
 | `derived_map.min_cost` | 最小栅格代价 | `0.2` |

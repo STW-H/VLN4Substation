@@ -19,5 +19,3 @@ min_direction_pixel_length: 8.0
 default_circle_radius_m: 0.5
 display_interpolation: auto
 review_max_resolution: 2048
-default_approach_min_distance_m: 1.0
-default_approach_max_distance_m: 8.0

@@ -1,0 +1,86 @@
+# Camera-feasible inspection goal-pose generation.
+
+paths:
+  planning_map: substation_vln/outputs/220kv_erfeishan/planning/maps/planning_map.npz
+  planning_metadata: substation_vln/outputs/220kv_erfeishan/planning/maps/planning_map_metadata.json
+  planning_overlay: substation_vln/outputs/220kv_erfeishan/planning/maps/planning_overlay.png
+  equipment_regions: substation_vln/outputs/220kv_erfeishan/planning/maps/equipment_regions.json
+  pointcloud: substation_vln/data/processed/220kv_erfeishan/pointcloud/erfeishan_0.02_resampled_real_coords_axis_corrected.ply
+  output_dir: substation_vln/outputs/220kv_erfeishan/planning/inspection_goal_regions
+
+robot:
+  length_m: 0.8
+  width_m: 0.4
+  safety_margin_m: 0.0
+  heading_bins: 16
+
+camera:
+  height_m: 1.0
+  forward_offset_m: 0.0
+  lateral_offset_m: 0.0
+  pan_min_deg: -180.0
+  pan_max_deg: 180.0
+  tilt_min_deg: 20.0
+  tilt_max_deg: 70.0
+  preferred_tilt_deg: 45.0
+  near_clip_m: 0.2
+
+# Fractions are measured from the robust device point-cloud bottom to top.
+# The selected height interval defines the ROI center used as the cone apex.
+observation_profiles:
+  default:
+    vertical_min_fraction: 0.5
+    vertical_max_fraction: 1.0
+    tilt_min_deg: 30.0
+    tilt_max_deg: 70.0
+    preferred_tilt_deg: 45.0
+  bianyaqi:
+    vertical_min_fraction: 0.0
+    vertical_max_fraction: 1.0
+    tilt_min_deg: 30.0
+    tilt_max_deg: 60.0
+    preferred_tilt_deg: 45.0
+
+geometry:
+  ground_z_m: 0.0
+  ground_clearance_m: 0.15
+  scan_stride: 2
+  chunk_size: 2000000
+  max_points_per_equipment: 500000
+  lower_percentile: 1.0
+  upper_percentile: 99.5
+  reuse_cache: true
+
+visibility:
+  enabled: true
+  voxel_size_m: 0.2
+  ground_z_m: 0.0
+  ground_clearance_m: 0.15
+  max_z_m: 35.0
+  chunk_size: 2000000
+  reuse_cache: true
+  clearance_radius_m: 0.2
+  include_voxel_uncertainty: true
+  ray_step_m: 0.1
+  camera_exclusion_m: 0.4
+  target_exclusion_m: 0.4
+  batch_size: 512
+
+generation:
+  observation_model: roi_conical_approach
+  min_candidate_distance_m: 0.2
+  candidate_stride_cells: 4
+  max_search_radius_m: 30.0
+
+visualization:
+  # Keep this equal to run_region_goal_astar.yaml so saturation shows the same
+  # terminal tilt cost that participates in A* endpoint selection.
+  tilt_cost_weight: 15.0
+  goal_marker_radius_px: 1
+
+outputs:
+  equipment_geometry: equipment_geometry.json
+  visibility_voxels: visibility_voxels.npz
+  goal_regions_npz: inspection_goal_regions.npz
+  metadata: inspection_goal_regions_metadata.json
+  overlay_png: inspection_goal_regions_overlay.png
