@@ -222,7 +222,7 @@ python substation_vln/tools/annotation/merge_annotation_files.py
 
 ```bash
 python substation_vln/tools/planning/build_planning_map.py \
-  --config substation_vln/configs/tools/planning/build_planning_map_erfeishan.yaml
+  --config substation_vln/configs/tools/planning/build_planning_map.yaml
 ```
 
 交互式测试 baseline A*：

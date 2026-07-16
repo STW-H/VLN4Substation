@@ -25,7 +25,7 @@ from substation_vln.planning.common.grid import GridSpec  # noqa: E402
 from substation_vln.planning.common.io import resolve_project_path, write_json  # noqa: E402
 
 
-DEFAULT_CONFIG = CONFIGS_DIR / "tools" / "planning" / "run_baseline_astar_erfeishan.yaml"
+DEFAULT_CONFIG = CONFIGS_DIR / "tools" / "planning" / "run_baseline_astar.yaml"
 
 
 def load_json(path: Path):

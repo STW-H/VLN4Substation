@@ -35,7 +35,7 @@ from substation_vln.planning.common.io import (  # noqa: E402
 )
 
 
-DEFAULT_CONFIG = CONFIGS_DIR / "tools" / "planning" / "build_planning_map_erfeishan.yaml"
+DEFAULT_CONFIG = CONFIGS_DIR / "tools" / "planning" / "build_planning_map.yaml"
 
 
 def output_path(output_dir: Path, outputs: dict, key: str) -> Path:

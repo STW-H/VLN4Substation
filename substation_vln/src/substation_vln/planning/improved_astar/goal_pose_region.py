@@ -145,7 +145,7 @@ def generate_goal_pose_candidates(
         distance_at_tilt(tilt_min),
     )
     if max_distance <= min_distance:
-        raise ValueError(f"Empty top-edge distance interval for {equipment.get('equipment_name')}")
+        raise ValueError(f"Empty conical viewing-distance interval for {equipment.get('equipment_name')}")
 
     bbox = equipment.get("bbox_xy")
     if bbox:
