@@ -1,7 +1,7 @@
 external/
 substation_vln/data/raw/
 substation_vln/data/processed/
-substation_vln/outputs/220kv_erfeishan/
+substation_vln/outputs/
 *.ply
 *.las
 *.laz
