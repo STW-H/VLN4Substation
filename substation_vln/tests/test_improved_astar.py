@@ -8,7 +8,8 @@ import unittest
 import numpy as np
 
 from substation_vln.planning.common.grid import GridSpec
-from substation_vln.planning.common.base_map import build_base_masks
+from substation_vln.annotation.schema import split_equipment_pending
+from substation_vln.planning.common.base_map import build_base_masks, extract_equipment_regions
 from substation_vln.planning.improved_astar.camera_model import CameraConfig
 from substation_vln.planning.improved_astar.goal_pose_region import (
     build_pose_free_masks,
@@ -31,18 +32,55 @@ class PosePlanningTest(unittest.TestCase):
                 {
                     "category": "equipment_region",
                     "geometry_type": "multi_circle",
-                    "circles": [{"center_xy": [2.0, 2.0], "radius_xy": 1.0}],
+                    "equipment_name": "test_breaker",
+                    "equipment_type": "duanluqi",
+                    "circles": [
+                        {
+                            "center_xy": [2.0, 2.0],
+                            "radius_xy": 0.5,
+                            "bbox_xy": {"min": [1.5, 1.5], "max": [2.5, 2.5]},
+                            "area_xy": math.pi * 0.25,
+                        },
+                        {
+                            "center_xy": [4.0, 2.0],
+                            "radius_xy": 0.5,
+                            "bbox_xy": {"min": [3.5, 1.5], "max": [4.5, 2.5]},
+                            "area_xy": math.pi * 0.25,
+                        },
+                    ],
                 },
                 {
                     "category": "equipment_region",
                     "geometry_type": "multi_polygon",
+                    "equipment_name": "test_transformer",
                     "polygons_xy": [[[6.0, 6.0], [8.0, 6.0], [8.0, 8.0], [6.0, 8.0]]],
                 },
             ]
         }
         layers = build_base_masks(payload, grid, preferred_path_width_m=0.5)
         labels = set(np.unique(layers["equipment_index_mask"]).tolist())
-        self.assertTrue({1, 2}.issubset(labels))
+        self.assertTrue({1, 2, 3}.issubset(labels))
+        equipment = extract_equipment_regions(payload)
+        self.assertEqual(
+            [item["equipment_name"] for item in equipment],
+            ["test_breaker_1", "test_breaker_2", "test_transformer"],
+        )
+        self.assertEqual([item["equipment_index"] for item in equipment], [1, 2, 3])
+
+    def test_equipment_circle_batch_is_split_before_saving(self):
+        pending = {
+            "selection_type": "image_multi_circle",
+            "geometry_type": "multi_circle",
+            "circles_pixel": [
+                {"center_pixel": [10.0, 20.0], "radius_pixel": 4.0},
+                {"center_pixel": [30.0, 40.0], "radius_pixel": 5.0},
+            ],
+        }
+        split = split_equipment_pending(pending)
+        self.assertEqual(len(split), 2)
+        self.assertEqual([len(item["circles_pixel"]) for item in split], [1, 1])
+        self.assertEqual(split[0]["circles_pixel"][0]["center_pixel"], [10.0, 20.0])
+        self.assertEqual(split[1]["circles_pixel"][0]["center_pixel"], [30.0, 40.0])
 
     def test_roi_conical_approach_inverts_tilt_to_distance(self):
         grid = GridSpec(0.0, 10.0, 0.0, 10.0, 0.1, 100, 100)

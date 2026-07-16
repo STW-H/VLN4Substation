@@ -59,7 +59,7 @@ visibility:
   max_z_m: 35.0
   chunk_size: 2000000
   reuse_cache: true
-  clearance_radius_m: 0.2
+  clearance_radius_m: 0.4
   include_voxel_uncertainty: true
   ray_step_m: 0.1
   camera_exclusion_m: 0.4

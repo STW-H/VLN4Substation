@@ -67,6 +67,44 @@ def fill_circle(mask: np.ndarray, grid: GridSpec, center_xy: list[float], radius
     cv2.circle(mask, tuple(center), radius_px, int(value), thickness=-1, lineType=cv2.LINE_AA)
 
 
+def equipment_primitives(annotation: dict[str, Any]) -> list[dict[str, Any]]:
+    """Split a grouped equipment annotation into independently planned primitives."""
+    geometry_type = annotation.get("geometry_type")
+    if geometry_type == "multi_polygon":
+        primitives = []
+        for polygon in annotation.get("polygons_xy", []):
+            points = np.asarray(polygon, dtype=np.float64)
+            area = 0.5 * abs(
+                float(np.dot(points[:, 0], np.roll(points[:, 1], 1)))
+                - float(np.dot(points[:, 1], np.roll(points[:, 0], 1)))
+            )
+            primitives.append(
+                {
+                    "geometry_type": "multi_polygon",
+                    "polygons_xy": [polygon],
+                    "circles": [],
+                    "bbox_xy": {
+                        "min": np.min(points, axis=0).tolist(),
+                        "max": np.max(points, axis=0).tolist(),
+                    },
+                    "area_xy": area,
+                }
+            )
+        return primitives
+    if geometry_type == "multi_circle":
+        return [
+            {
+                "geometry_type": "multi_circle",
+                "polygons_xy": [],
+                "circles": [circle],
+                "bbox_xy": circle["bbox_xy"],
+                "area_xy": float(circle["area_xy"]),
+            }
+            for circle in annotation.get("circles", [])
+        ]
+    raise ValueError(f"Unsupported equipment geometry: {geometry_type}")
+
+
 def build_base_masks(payload: dict[str, Any], grid: GridSpec, preferred_path_width_m: float) -> dict[str, np.ndarray]:
     boundary_mask = empty_mask(grid)
     obstacle_mask = empty_mask(grid)
@@ -111,23 +149,22 @@ def build_base_masks(payload: dict[str, Any], grid: GridSpec, preferred_path_wid
             elif geometry_type in ("directed_polyline", "polyline"):
                 draw_polyline(preferred_path_mask, grid, annotation["polyline_xy"], preferred_path_width_m)
         elif category == "equipment_region":
-            equipment_index += 1
-            if geometry_type == "multi_polygon":
-                for polygon in annotation.get("polygons_xy", []):
-                    fill_polygon(equipment_mask, grid, polygon)
-                    fill_polygon(equipment_index_mask, grid, polygon, value=equipment_index)
-            elif geometry_type == "multi_circle":
-                for circle in annotation.get("circles", []):
-                    fill_circle(equipment_mask, grid, circle["center_xy"], float(circle["radius_xy"]))
-                    fill_circle(
-                        equipment_index_mask,
-                        grid,
-                        circle["center_xy"],
-                        float(circle["radius_xy"]),
-                        value=equipment_index,
-                    )
-            else:
-                raise ValueError(f"Unsupported equipment geometry: {geometry_type}")
+            for primitive in equipment_primitives(annotation):
+                equipment_index += 1
+                if primitive["geometry_type"] == "multi_polygon":
+                    for polygon in primitive["polygons_xy"]:
+                        fill_polygon(equipment_mask, grid, polygon)
+                        fill_polygon(equipment_index_mask, grid, polygon, value=equipment_index)
+                else:
+                    for circle in primitive["circles"]:
+                        fill_circle(equipment_mask, grid, circle["center_xy"], float(circle["radius_xy"]))
+                        fill_circle(
+                            equipment_index_mask,
+                            grid,
+                            circle["center_xy"],
+                            float(circle["radius_xy"]),
+                            value=equipment_index,
+                        )
 
     boundary_mask = (boundary_mask > 0).astype(np.uint8)
     obstacle_mask = ((obstacle_mask > 0) & (boundary_mask > 0)).astype(np.uint8)
@@ -153,21 +190,24 @@ def extract_equipment_regions(payload: dict[str, Any]) -> list[dict[str, Any]]:
     for annotation in payload["annotations"]:
         if annotation.get("category") != "equipment_region":
             continue
-        equipment.append(
-            {
-                "equipment_index": len(equipment) + 1,
-                "annotation_id": annotation.get("id"),
-                "source_file": annotation.get("source_file"),
-                "source_id": annotation.get("source_id"),
-                "equipment_name": annotation.get("equipment_name") or annotation.get("label"),
-                "equipment_type": annotation.get("equipment_type") or "unknown",
-                "geometry_type": annotation.get("geometry_type"),
-                "polygons_xy": annotation.get("polygons_xy", []),
-                "circles": annotation.get("circles", []),
-                "bbox_xy": annotation.get("bbox_xy"),
-                "area_xy": annotation.get("area_xy"),
-            }
-        )
+        primitives = equipment_primitives(annotation)
+        base_name = annotation.get("equipment_name") or annotation.get("label")
+        for primitive_index, primitive in enumerate(primitives, start=1):
+            equipment_name = base_name if len(primitives) == 1 else f"{base_name}_{primitive_index}"
+            equipment.append(
+                {
+                    "equipment_index": len(equipment) + 1,
+                    "annotation_id": annotation.get("id"),
+                    "source_file": annotation.get("source_file"),
+                    "source_id": annotation.get("source_id"),
+                    "source_equipment_name": base_name,
+                    "equipment_name": equipment_name,
+                    "equipment_type": annotation.get("equipment_type") or "unknown",
+                    "primitive_index": primitive_index,
+                    "primitive_count": len(primitives),
+                    **primitive,
+                }
+            )
     return equipment
 
 

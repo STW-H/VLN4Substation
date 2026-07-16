@@ -129,6 +129,30 @@ def make_annotation(
     return annotation
 
 
+def split_equipment_pending(pending: dict) -> list[dict]:
+    """Split a batched drawing into one geometry per physical device."""
+    geometry_type = pending.get("geometry_type")
+    if geometry_type == "multi_circle":
+        return [
+            {
+                "selection_type": pending["selection_type"],
+                "geometry_type": "multi_circle",
+                "circles_pixel": [dict(circle)],
+            }
+            for circle in pending.get("circles_pixel", [])
+        ]
+    if geometry_type == "multi_polygon":
+        return [
+            {
+                "selection_type": pending["selection_type"],
+                "geometry_type": "multi_polygon",
+                "polygons_pixel": [[list(point) for point in polygon]],
+            }
+            for polygon in pending.get("polygons_pixel", [])
+        ]
+    return [pending]
+
+
 def add_directed_point_fields(annotation: dict, pending: dict, pixel_to_world: np.ndarray) -> None:
     stop_pixel = pending["stop_pixel"]
     look_pixel = pending["look_pixel"]
