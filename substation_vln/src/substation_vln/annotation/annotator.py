@@ -36,6 +36,7 @@ from .schema import (
     polygon_area,
     polyline_length,
     rectangle_polygon,
+    split_equipment_pending,
 )
 from substation_vln.interactive import ask_yes_no, choose_numbered_option
 
@@ -866,70 +867,88 @@ class OrthoImageAnnotator:
             print(f"{category['name']}只能标注一次，已忽略本次标注。")
             return False
 
-        default_label = category["default_label"]
         cv2.imshow(self.window_name, self.render_view())
         cv2.waitKey(1)
-        label = input(f"{category['name']} label [{default_label}]: ").strip() or default_label
-        annotation_id = len(self.annotations) + 1
-        color = LABEL_COLORS_BGR[(annotation_id - 1) % len(LABEL_COLORS_BGR)]
-        annotation = make_annotation(
-            annotation_id=annotation_id,
-            category=category,
-            label=label,
-            pending=pending,
-            pixel_to_world=self.pixel_to_world,
-            color_bgr=color,
-        )
-
-        if annotation["geometry_type"] == "directed_point":
-            print(
-                f"Pending annotation #{annotation_id}: "
-                f"category={category['key']}, label={label}, yaw_deg={annotation['yaw_deg']:.2f}"
+        pending_items = split_equipment_pending(pending) if category["key"] == "equipment_region" else [pending]
+        annotation_fields: list[tuple[str, dict]] = []
+        if category["key"] == "equipment_region":
+            equipment_type = input("设备类型 [unknown_device]: ").strip() or "unknown_device"
+            count = len(pending_items)
+            default_base_name = equipment_type
+            equipment_base_name = (
+                input(f"设备基础名称（应与操作票中的名称一致） [{default_base_name}]: ").strip()
+                or default_base_name
             )
-        elif annotation["geometry_type"] == "multi_directed_point":
-            print(
-                f"Pending annotation #{annotation_id}: "
-                f"category={category['key']}, label={label}, count={annotation['count']}"
-            )
-        elif annotation["geometry_type"] == "directed_polyline":
-            print(
-                f"Pending annotation #{annotation_id}: "
-                f"category={category['key']}, label={label}, length_xy={annotation['length_xy']:.3f}"
-            )
-        elif annotation["geometry_type"] == "multi_directed_polyline":
-            print(
-                f"Pending annotation #{annotation_id}: "
-                f"category={category['key']}, label={label}, count={annotation['count']}, length_xy={annotation['length_xy']:.3f}"
-            )
-        elif annotation["geometry_type"] == "polyline":
-            print(
-                f"Pending annotation #{annotation_id}: "
-                f"category={category['key']}, label={label}, length_xy={annotation['length_xy']:.3f}"
-            )
-        elif annotation["geometry_type"] == "multi_polyline":
-            print(
-                f"Pending annotation #{annotation_id}: "
-                f"category={category['key']}, label={label}, count={annotation['count']}, length_xy={annotation['length_xy']:.3f}"
-            )
-        elif annotation["geometry_type"] == "multi_circle":
-            print(
-                f"Pending annotation #{annotation_id}: "
-                f"category={category['key']}, label={label}, count={annotation['count']}, area_xy={annotation['area_xy']:.3f}"
-            )
+            for index in range(1, count + 1):
+                equipment_name = equipment_base_name if count == 1 else f"{equipment_base_name}_{index}"
+                annotation_fields.append(
+                    (
+                        equipment_name,
+                        {
+                            "equipment_id": equipment_name,
+                            "equipment_name": equipment_name,
+                            "equipment_group_name": equipment_base_name,
+                            "equipment_type": equipment_type,
+                            "batch_primitive_index": index,
+                            "batch_primitive_count": count,
+                        },
+                    )
+                )
+            if count > 1:
+                print(
+                    f"已按 {count} 个设备区域自动编号："
+                    f"{equipment_base_name}_1 ... {equipment_base_name}_{count}"
+                )
         else:
-            print(
-                f"Pending annotation #{annotation_id}: "
-                f"category={category['key']}, label={label}, area_xy={annotation['area_xy']:.3f}"
+            default_label = category["default_label"]
+            label = input(f"{category['name']} label [{default_label}]: ").strip() or default_label
+            annotation_fields.append((label, {}))
+
+        new_annotations = []
+        for offset, (pending_item, (label, extra_fields)) in enumerate(
+            zip(pending_items, annotation_fields), start=1
+        ):
+            annotation_id = len(self.annotations) + offset
+            color = LABEL_COLORS_BGR[(annotation_id - 1) % len(LABEL_COLORS_BGR)]
+            annotation = make_annotation(
+                annotation_id=annotation_id,
+                category=category,
+                label=label,
+                pending=pending_item,
+                pixel_to_world=self.pixel_to_world,
+                color_bgr=color,
             )
+            annotation.update(extra_fields)
+            new_annotations.append(annotation)
+
+            summary = f"Pending annotation #{annotation_id}: category={category['key']}, label={label}"
+            if "yaw_deg" in annotation:
+                summary += f", yaw_deg={annotation['yaw_deg']:.2f}"
+            if "count" in annotation:
+                summary += f", count={annotation['count']}"
+            if "length_xy" in annotation:
+                summary += f", length_xy={annotation['length_xy']:.3f}"
+            if "area_xy" in annotation:
+                summary += f", area_xy={annotation['area_xy']:.3f}"
+            print(summary)
 
         if not self.confirm_annotation():
             self.pending_annotation = None
             print("Discarded current annotation.")
             return False
 
-        self.annotations.append(annotation)
+        self.annotations.extend(new_annotations)
         self.pending_annotation = None
-        print(f"Confirmed annotation #{annotation_id}: category={category['key']}, label={label}")
+        if len(new_annotations) == 1:
+            annotation = new_annotations[0]
+            print(
+                f"Confirmed annotation #{annotation['id']}: "
+                f"category={category['key']}, label={annotation['label']}"
+            )
+        else:
+            first_id = new_annotations[0]["id"]
+            last_id = new_annotations[-1]["id"]
+            print(f"Confirmed {len(new_annotations)} independent equipment annotations #{first_id}-#{last_id}.")
         return True
 
     def confirm_annotation(self) -> bool:
@@ -1040,9 +1059,20 @@ class OrthoImageAnnotator:
                 cv2.fillPoly(overlay, [pts], color)
                 review = cv2.addWeighted(overlay, 0.18, review, 0.82, 0.0)
                 cv2.polylines(review, [pts], isClosed=True, color=color, thickness=max(3, int(self.args.line_width * 2)))
+        max_resolution = int(self.args.review_max_resolution)
+        if max_resolution <= 0:
+            raise ValueError("review_max_resolution must be positive")
+        height, width = review.shape[:2]
+        scale = min(1.0, max_resolution / max(width, height))
+        if scale < 1.0:
+            review = cv2.resize(
+                review,
+                (max(1, int(round(width * scale))), max(1, int(round(height * scale)))),
+                interpolation=cv2.INTER_AREA,
+            )
         self.review_path.parent.mkdir(parents=True, exist_ok=True)
         cv2.imwrite(str(self.review_path), review)
-        print(f"Saved review image: {self.review_path}")
+        print(f"Saved review thumbnail: {self.review_path} ({review.shape[1]} x {review.shape[0]})")
 
     def draw_review_circle(self, image: np.ndarray, center_pixel: list[float], radius_pixel: float, color: tuple[int, int, int]) -> None:
         center = tuple(np.asarray(center_pixel, dtype=np.int32))
@@ -1082,7 +1112,11 @@ class OrthoImageAnnotator:
             path_category["path_type"] = path_type["key"]
             path_category["path_type_name"] = path_type["name"]
             return path_category
-        if category["key"] not in ("obstacle", "narrow_space"):
+        if category["key"] not in (
+            "obstacle",
+            "narrow_space",
+            "equipment_region",
+        ):
             return category
 
         shape = choose_numbered_option(

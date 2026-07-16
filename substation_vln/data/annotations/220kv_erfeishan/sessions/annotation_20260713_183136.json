@@ -1,0 +1,268 @@
+{
+  "image": "/home/he/VLN/substation_vln/data/processed/220kv_erfeishan/orthophoto/axis_corrected_pointcloud_ortho_8k.png",
+  "metadata": "/home/he/VLN/substation_vln/data/processed/220kv_erfeishan/orthophoto/axis_corrected_pointcloud_ortho_8k.json",
+  "saved_at": "2026-07-13T18:33:29",
+  "coordinate_system": "axis_corrected_pointcloud",
+  "pixel_to_world_matrix": [
+    [
+      0.024009753584301494,
+      0.0,
+      519034.08207638183
+    ],
+    [
+      0.0,
+      -0.0240119947711791,
+      3344697.0575866215
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "world_to_pixel_matrix": [
+    [
+      41.64974023947662,
+      0.0,
+      -21617634.693916492
+    ],
+    [
+      -0.0,
+      -41.64585281353929,
+      139292761.36613038
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "image_size": {
+    "width": 8246,
+    "height": 8192
+  },
+  "categories": {
+    "1": {
+      "key": "obstacle",
+      "name": "障碍物",
+      "default_label": "obstacle",
+      "geometry": "polygon"
+    },
+    "2": {
+      "key": "patrol_point",
+      "name": "巡视点位",
+      "default_label": "patrol_point",
+      "geometry": "directed_point"
+    },
+    "3": {
+      "key": "preferred_road",
+      "name": "优先通过区",
+      "default_label": "preferred_road",
+      "geometry": "polygon"
+    },
+    "4": {
+      "key": "planning_boundary",
+      "name": "规划边界",
+      "default_label": "planning_boundary",
+      "geometry": "polygon",
+      "single": true
+    },
+    "5": {
+      "key": "preferred_path",
+      "name": "优先路径",
+      "default_label": "preferred_path",
+      "geometry": "directed_polyline"
+    },
+    "6": {
+      "key": "narrow_space",
+      "name": "狭窄空间",
+      "default_label": "narrow_space",
+      "geometry": "polygon"
+    }
+  },
+  "obstacle_shape_options": {
+    "1": {
+      "key": "polygon",
+      "name": "多边形",
+      "geometry": "polygon"
+    },
+    "2": {
+      "key": "rectangle",
+      "name": "矩形",
+      "geometry": "rectangle"
+    },
+    "3": {
+      "key": "circle",
+      "name": "圆形",
+      "geometry": "circle"
+    }
+  },
+  "preferred_path_options": {
+    "1": {
+      "key": "directed",
+      "name": "有向路径",
+      "geometry": "directed_polyline"
+    },
+    "2": {
+      "key": "undirected",
+      "name": "无向路径",
+      "geometry": "polyline"
+    }
+  },
+  "annotations": [
+    {
+      "id": 1,
+      "category": "obstacle",
+      "category_name": "障碍物",
+      "label": "zhubianyaqi1",
+      "selection_type": "image_multi_rectangle",
+      "geometry_type": "multi_polygon",
+      "color_bgr": [
+        30,
+        30,
+        255
+      ],
+      "shape": "rectangle",
+      "shape_name": "矩形",
+      "polygons_pixel": [
+        [
+          [
+            3896.5,
+            4086.0
+          ],
+          [
+            4469.5,
+            4086.0
+          ],
+          [
+            4469.5,
+            4537.0
+          ],
+          [
+            3896.5,
+            4537.0
+          ]
+        ]
+      ],
+      "polygons_xy": [
+        [
+          [
+            519127.6360812231,
+            3344598.9445759864
+          ],
+          [
+            519141.39367002685,
+            3344598.9445759864
+          ],
+          [
+            519141.39367002685,
+            3344588.1151663447
+          ],
+          [
+            519127.6360812231,
+            3344588.1151663447
+          ]
+        ]
+      ],
+      "bbox_pixel": {
+        "min": [
+          3896.5,
+          4086.0
+        ],
+        "max": [
+          4469.5,
+          4537.0
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519127.6360812231,
+          3344588.1151663447
+        ],
+        "max": [
+          519141.39367002685,
+          3344598.9445759864
+        ]
+      },
+      "area_pixel": 258423.0,
+      "area_xy": 148.986328125
+    },
+    {
+      "id": 2,
+      "category": "obstacle",
+      "category_name": "障碍物",
+      "label": "zhubianyaqi2",
+      "selection_type": "image_multi_rectangle",
+      "geometry_type": "multi_polygon",
+      "color_bgr": [
+        0,
+        145,
+        255
+      ],
+      "shape": "rectangle",
+      "shape_name": "矩形",
+      "polygons_pixel": [
+        [
+          [
+            6259.728555596001,
+            4078.24454503
+          ],
+          [
+            6821.907963689051,
+            4078.24454503
+          ],
+          [
+            6821.907963689051,
+            4539.369896369
+          ],
+          [
+            6259.728555596001,
+            4539.369896369
+          ]
+        ]
+      ],
+      "polygons_xy": [
+        [
+          [
+            519184.3766165063,
+            3344599.1307999305
+          ],
+          [
+            519197.8744055648,
+            3344599.1307999305
+          ],
+          [
+            519197.8744055648,
+            3344588.0582604054
+          ],
+          [
+            519184.3766165063,
+            3344588.0582604054
+          ]
+        ]
+      ],
+      "bbox_pixel": {
+        "min": [
+          6259.728555596001,
+          4078.24454503
+        ],
+        "max": [
+          6821.907963689051,
+          4539.369896369
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519184.3766165063,
+          3344588.0582604054
+        ],
+        "max": [
+          519197.8744055648,
+          3344599.1307999305
+        ]
+      },
+      "area_pixel": 259235.17707246542,
+      "area_xy": 149.45458984375
+    }
+  ]
+}

@@ -1,0 +1,290 @@
+{
+  "schema_version": 2,
+  "annotation_kind": "ortho_2d",
+  "image": "/home/he/VLN/substation_vln/data/processed/220kv_erfeishan/orthophoto/axis_corrected_pointcloud_ortho_8k.png",
+  "metadata": "/home/he/VLN/substation_vln/data/processed/220kv_erfeishan/orthophoto/axis_corrected_pointcloud_ortho_8k.json",
+  "saved_at": "2026-07-16T21:31:46",
+  "coordinate_system": "axis_corrected_pointcloud",
+  "pixel_to_world_matrix": [
+    [
+      0.024009753584301494,
+      0.0,
+      519034.08207638183
+    ],
+    [
+      0.0,
+      -0.0240119947711791,
+      3344697.0575866215
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "world_to_pixel_matrix": [
+    [
+      41.64974023947662,
+      0.0,
+      -21617634.693916492
+    ],
+    [
+      -0.0,
+      -41.64585281353929,
+      139292761.36613038
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "image_size": {
+    "width": 8246,
+    "height": 8192
+  },
+  "categories": {
+    "1": {
+      "key": "obstacle",
+      "name": "障碍物",
+      "default_label": "obstacle",
+      "geometry": "polygon"
+    },
+    "2": {
+      "key": "preferred_road",
+      "name": "优先通过区",
+      "default_label": "preferred_road",
+      "geometry": "polygon"
+    },
+    "3": {
+      "key": "planning_boundary",
+      "name": "规划边界",
+      "default_label": "planning_boundary",
+      "geometry": "polygon",
+      "single": true
+    },
+    "4": {
+      "key": "preferred_path",
+      "name": "优先路径",
+      "default_label": "preferred_path",
+      "geometry": "directed_polyline"
+    },
+    "5": {
+      "key": "narrow_space",
+      "name": "狭窄空间",
+      "default_label": "narrow_space",
+      "geometry": "polygon"
+    },
+    "6": {
+      "key": "equipment_region",
+      "name": "巡视设备区域",
+      "default_label": "equipment",
+      "geometry": "polygon"
+    }
+  },
+  "obstacle_shape_options": {
+    "1": {
+      "key": "polygon",
+      "name": "多边形",
+      "geometry": "polygon"
+    },
+    "2": {
+      "key": "rectangle",
+      "name": "矩形",
+      "geometry": "rectangle"
+    },
+    "3": {
+      "key": "circle",
+      "name": "圆形",
+      "geometry": "circle"
+    }
+  },
+  "preferred_path_options": {
+    "1": {
+      "key": "directed",
+      "name": "有向路径",
+      "geometry": "directed_polyline"
+    },
+    "2": {
+      "key": "undirected",
+      "name": "无向路径",
+      "geometry": "polyline"
+    }
+  },
+  "annotations": [
+    {
+      "id": 1,
+      "category": "obstacle",
+      "category_name": "障碍物",
+      "label": "bileiqi",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        30,
+        30,
+        255
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            3673.5466182771515,
+            2413.7663883146406
+          ],
+          "radius_pixel": 20.82389805974107,
+          "default_radius_m": 0.5
+        },
+        {
+          "center_pixel": [
+            3821.0964870632533,
+            2410.450660926189
+          ],
+          "radius_pixel": 20.823898236427116,
+          "default_radius_m": 0.5
+        },
+        {
+          "center_pixel": [
+            3962.0149010724517,
+            2412.1085246204148
+          ],
+          "radius_pixel": 20.823898261667978,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            3673.5466182771515,
+            2413.7663883146406
+          ],
+          "radius_pixel": 20.82389805974107,
+          "center_xy": [
+            519122.2830254671,
+            3344639.0982407266
+          ],
+          "radius_x_xy": 0.49997666105628014,
+          "radius_y_xy": 0.5000233314931393,
+          "radius_xy": 0.4999999962747097,
+          "area_pixel": 1362.3036833738465,
+          "area_xy": 0.7853981499834046,
+          "bbox_pixel": {
+            "min": [
+              3652.7227202174104,
+              2392.9424902548994
+            ],
+            "max": [
+              3694.3705163368927,
+              2434.590286374382
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519121.783048806,
+              3344638.598217395
+            ],
+            "max": [
+              519122.7830021282,
+              3344639.5982640577
+            ]
+          }
+        },
+        {
+          "center_pixel": [
+            3821.0964870632533,
+            2410.450660926189
+          ],
+          "radius_pixel": 20.823898236427116,
+          "center_xy": [
+            519125.8256614581,
+            3344639.177857955
+          ],
+          "radius_x_xy": 0.4999766653054394,
+          "radius_y_xy": 0.5000233352184296,
+          "radius_xy": 0.5000000002619345,
+          "area_pixel": 1362.3037064915216,
+          "area_xy": 0.785398162509679,
+          "bbox_pixel": {
+            "min": [
+              3800.272588826826,
+              2389.6267626897616
+            ],
+            "max": [
+              3841.9203852996807,
+              2431.2745591626162
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519125.32568479277,
+              3344638.67783462
+            ],
+            "max": [
+              519126.3256381234,
+              3344639.6778812907
+            ]
+          }
+        },
+        {
+          "center_pixel": [
+            3962.0149010724517,
+            2412.1085246204148
+          ],
+          "radius_pixel": 20.823898261667978,
+          "center_xy": [
+            519129.20907785394,
+            3344639.138049341
+          ],
+          "radius_x_xy": 0.499976665887516,
+          "radius_y_xy": 0.5000233361497521,
+          "radius_xy": 0.5000000010186341,
+          "area_pixel": 1362.303709794046,
+          "area_xy": 0.7853981648868953,
+          "bbox_pixel": {
+            "min": [
+              3941.1910028107836,
+              2391.2846263587467
+            ],
+            "max": [
+              3982.83879933412,
+              2432.932422882083
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519128.709101188,
+              3344638.6380260047
+            ],
+            "max": [
+              519129.70905451983,
+              3344639.638072677
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          3652.7227202174104,
+          2389.6267626897616
+        ],
+        "max": [
+          3982.83879933412,
+          2434.590286374382
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519121.783048806,
+          3344638.598217395
+        ],
+        "max": [
+          519129.70905451983,
+          3344639.6778812907
+        ]
+      },
+      "area_pixel": 4086.911099659414,
+      "area_xy": 2.356194477379979,
+      "count": 3
+    }
+  ]
+}

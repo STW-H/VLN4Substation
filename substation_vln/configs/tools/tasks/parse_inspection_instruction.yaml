@@ -1,0 +1,8 @@
+# DeepSeek is used only for text-to-structured-task parsing.
+# Set the key in the shell; never write it into this file:
+#   export DEEPSEEK_API_KEY='your-api-key'
+deepseek:
+  api_key_env: DEEPSEEK_API_KEY
+  base_url: https://api.deepseek.com
+  model: deepseek-chat
+  timeout_s: 60.0

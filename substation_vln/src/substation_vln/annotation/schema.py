@@ -9,11 +9,11 @@ import numpy as np
 
 CATEGORIES = {
     "1": {"key": "obstacle", "name": "障碍物", "default_label": "obstacle", "geometry": "polygon"},
-    "2": {"key": "patrol_point", "name": "巡视点位", "default_label": "patrol_point", "geometry": "directed_point"},
-    "3": {"key": "preferred_road", "name": "优先通过区", "default_label": "preferred_road", "geometry": "polygon"},
-    "4": {"key": "planning_boundary", "name": "规划边界", "default_label": "planning_boundary", "geometry": "polygon", "single": True},
-    "5": {"key": "preferred_path", "name": "优先路径", "default_label": "preferred_path", "geometry": "directed_polyline"},
-    "6": {"key": "narrow_space", "name": "狭窄空间", "default_label": "narrow_space", "geometry": "polygon"},
+    "2": {"key": "preferred_road", "name": "优先通过区", "default_label": "preferred_road", "geometry": "polygon"},
+    "3": {"key": "planning_boundary", "name": "规划边界", "default_label": "planning_boundary", "geometry": "polygon", "single": True},
+    "4": {"key": "preferred_path", "name": "优先路径", "default_label": "preferred_path", "geometry": "directed_polyline"},
+    "5": {"key": "narrow_space", "name": "狭窄空间", "default_label": "narrow_space", "geometry": "polygon"},
+    "6": {"key": "equipment_region", "name": "巡视设备区域", "default_label": "equipment", "geometry": "polygon"},
 }
 
 LABEL_COLORS_BGR = [
@@ -127,6 +127,30 @@ def make_annotation(
         add_polygon_fields(annotation, pending, pixel_to_world)
 
     return annotation
+
+
+def split_equipment_pending(pending: dict) -> list[dict]:
+    """Split a batched drawing into one geometry per physical device."""
+    geometry_type = pending.get("geometry_type")
+    if geometry_type == "multi_circle":
+        return [
+            {
+                "selection_type": pending["selection_type"],
+                "geometry_type": "multi_circle",
+                "circles_pixel": [dict(circle)],
+            }
+            for circle in pending.get("circles_pixel", [])
+        ]
+    if geometry_type == "multi_polygon":
+        return [
+            {
+                "selection_type": pending["selection_type"],
+                "geometry_type": "multi_polygon",
+                "polygons_pixel": [[list(point) for point in polygon]],
+            }
+            for polygon in pending.get("polygons_pixel", [])
+        ]
+    return [pending]
 
 
 def add_directed_point_fields(annotation: dict, pending: dict, pixel_to_world: np.ndarray) -> None:

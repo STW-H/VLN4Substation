@@ -1,0 +1,197 @@
+{
+  "image": "/home/he/VLN/substation_vln/data/processed/220kv_erfeishan/orthophoto/axis_corrected_pointcloud_ortho_8k.png",
+  "metadata": "/home/he/VLN/substation_vln/data/processed/220kv_erfeishan/orthophoto/axis_corrected_pointcloud_ortho_8k.json",
+  "saved_at": "2026-07-13T18:59:26",
+  "coordinate_system": "axis_corrected_pointcloud",
+  "pixel_to_world_matrix": [
+    [
+      0.024009753584301494,
+      0.0,
+      519034.08207638183
+    ],
+    [
+      0.0,
+      -0.0240119947711791,
+      3344697.0575866215
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "world_to_pixel_matrix": [
+    [
+      41.64974023947662,
+      0.0,
+      -21617634.693916492
+    ],
+    [
+      -0.0,
+      -41.64585281353929,
+      139292761.36613038
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "image_size": {
+    "width": 8246,
+    "height": 8192
+  },
+  "categories": {
+    "1": {
+      "key": "obstacle",
+      "name": "障碍物",
+      "default_label": "obstacle",
+      "geometry": "polygon"
+    },
+    "2": {
+      "key": "patrol_point",
+      "name": "巡视点位",
+      "default_label": "patrol_point",
+      "geometry": "directed_point"
+    },
+    "3": {
+      "key": "preferred_road",
+      "name": "优先通过区",
+      "default_label": "preferred_road",
+      "geometry": "polygon"
+    },
+    "4": {
+      "key": "planning_boundary",
+      "name": "规划边界",
+      "default_label": "planning_boundary",
+      "geometry": "polygon",
+      "single": true
+    },
+    "5": {
+      "key": "preferred_path",
+      "name": "优先路径",
+      "default_label": "preferred_path",
+      "geometry": "directed_polyline"
+    },
+    "6": {
+      "key": "narrow_space",
+      "name": "狭窄空间",
+      "default_label": "narrow_space",
+      "geometry": "polygon"
+    }
+  },
+  "obstacle_shape_options": {
+    "1": {
+      "key": "polygon",
+      "name": "多边形",
+      "geometry": "polygon"
+    },
+    "2": {
+      "key": "rectangle",
+      "name": "矩形",
+      "geometry": "rectangle"
+    },
+    "3": {
+      "key": "circle",
+      "name": "圆形",
+      "geometry": "circle"
+    }
+  },
+  "preferred_path_options": {
+    "1": {
+      "key": "directed",
+      "name": "有向路径",
+      "geometry": "directed_polyline"
+    },
+    "2": {
+      "key": "undirected",
+      "name": "无向路径",
+      "geometry": "polyline"
+    }
+  },
+  "annotations": [
+    {
+      "id": 1,
+      "category": "planning_boundary",
+      "category_name": "规划边界",
+      "label": "wanzhengquyu",
+      "selection_type": "image_multi_polygon",
+      "geometry_type": "multi_polygon",
+      "color_bgr": [
+        30,
+        30,
+        255
+      ],
+      "polygons_pixel": [
+        [
+          [
+            464.2109984158176,
+            1451.0022333779327
+          ],
+          [
+            475.76079647465235,
+            6769.298793168346
+          ],
+          [
+            7166.473822476548,
+            6769.298793168346
+          ],
+          [
+            7156.081289040695,
+            1459.9266696818568
+          ],
+          [
+            492.0424321908222,
+            1452.9983140579552
+          ]
+        ]
+      ],
+      "polygons_xy": [
+        [
+          [
+            519045.22766806494,
+            3344662.2161285807
+          ],
+          [
+            519045.50497587025,
+            3344534.513219395
+          ],
+          [
+            519206.14734692784,
+            3344534.513219395
+          ],
+          [
+            519205.89782476093,
+            3344662.0018350626
+          ],
+          [
+            519045.89589393174,
+            3344662.168198702
+          ]
+        ]
+      ],
+      "bbox_pixel": {
+        "min": [
+          464.2109984158176,
+          1451.0022333779327
+        ],
+        "max": [
+          7166.473822476548,
+          6769.298793168346
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519045.22766806494,
+          3344534.513219395
+        ],
+        "max": [
+          519206.14734692784,
+          3344662.2161285807
+        ]
+      },
+      "area_pixel": 35549811.88155844,
+      "area_xy": 20495.251953125
+    }
+  ]
+}

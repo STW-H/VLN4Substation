@@ -20,6 +20,7 @@ from substation_vln.paths import CONFIGS_DIR  # noqa: E402
 from substation_vln.planning.common.base_map import (  # noqa: E402
     build_base_masks,
     build_grid_spec,
+    extract_equipment_regions,
     extract_patrol_points,
     load_merged_annotations,
 )
@@ -34,7 +35,7 @@ from substation_vln.planning.common.io import (  # noqa: E402
 )
 
 
-DEFAULT_CONFIG = CONFIGS_DIR / "tools" / "planning" / "build_planning_map_erfeishan.yaml"
+DEFAULT_CONFIG = CONFIGS_DIR / "tools" / "planning" / "build_planning_map.yaml"
 
 
 def output_path(output_dir: Path, outputs: dict, key: str) -> Path:
@@ -73,6 +74,7 @@ def main() -> int:
     )
     layers = {**base_masks, **derived_layers}
     patrol_points = extract_patrol_points(payload)
+    equipment_regions = extract_equipment_regions(payload)
 
     np.savez_compressed(
         output_path(output_dir, outputs, "npz"),
@@ -83,10 +85,14 @@ def main() -> int:
         preferred_road_mask=layers["preferred_road_mask"],
         preferred_path_mask=layers["preferred_path_mask"],
         narrow_space_mask=layers["narrow_space_mask"],
+        equipment_mask=layers["equipment_mask"],
+        equipment_index_mask=layers["equipment_index_mask"],
         distance_to_obstacle_m=layers["distance_to_obstacle_m"],
         distance_to_preferred_path_m=layers["distance_to_preferred_path_m"],
         preferred_path_attraction=layers["preferred_path_attraction"],
         cost_map=layers["cost_map"],
+        pose_center_space_mask=layers["pose_center_space_mask"],
+        pose_cost_map=layers["pose_cost_map"],
     )
 
     metadata = {
@@ -100,6 +106,7 @@ def main() -> int:
         "annotation_source_files": payload.get("source_files", []),
         "counts": {
             "patrol_points": len(patrol_points),
+            "equipment_regions": len(equipment_regions),
             "boundary_cells": int(layers["boundary_mask"].sum()),
             "obstacle_cells": int(layers["obstacle_mask"].sum()),
             "inflated_obstacle_cells": int(layers["inflated_obstacle_mask"].sum()),
@@ -107,10 +114,14 @@ def main() -> int:
             "preferred_road_cells": int(layers["preferred_road_mask"].sum()),
             "preferred_path_cells": int(layers["preferred_path_mask"].sum()),
             "narrow_space_cells": int(layers["narrow_space_mask"].sum()),
+            "equipment_cells": int(layers["equipment_mask"].sum()),
+            "pose_center_space_cells": int(layers["pose_center_space_mask"].sum()),
         },
     }
     write_json(output_path(output_dir, outputs, "metadata"), metadata)
     write_json(output_path(output_dir, outputs, "patrol_points"), patrol_points)
+    if "equipment_regions" in outputs:
+        write_json(output_path(output_dir, outputs, "equipment_regions"), equipment_regions)
 
     save_mask_png(output_path(output_dir, outputs, "boundary_mask_png"), layers["boundary_mask"])
     save_mask_png(output_path(output_dir, outputs, "obstacle_mask_png"), layers["obstacle_mask"])
@@ -119,12 +130,17 @@ def main() -> int:
     save_mask_png(output_path(output_dir, outputs, "preferred_road_mask_png"), layers["preferred_road_mask"])
     save_mask_png(output_path(output_dir, outputs, "preferred_path_mask_png"), layers["preferred_path_mask"])
     save_mask_png(output_path(output_dir, outputs, "narrow_space_mask_png"), layers["narrow_space_mask"])
+    if "equipment_mask_png" in outputs:
+        save_mask_png(output_path(output_dir, outputs, "equipment_mask_png"), layers["equipment_mask"])
     save_cost_png(output_path(output_dir, outputs, "cost_map_png"), layers["cost_map"])
+    if "pose_cost_map_png" in outputs:
+        save_cost_png(output_path(output_dir, outputs, "pose_cost_map_png"), layers["pose_cost_map"])
     save_overlay_png(output_path(output_dir, outputs, "planning_overlay_png"), layers, layers["cost_map"])
 
     print(f"Built planning map: {output_path(output_dir, outputs, 'npz')}")
     print(f"Metadata: {output_path(output_dir, outputs, 'metadata')}")
     print(f"Patrol points: {len(patrol_points)}")
+    print(f"Equipment regions: {len(equipment_regions)}")
     print("Grid:", grid.to_dict())
     print("Counts:", metadata["counts"])
     return 0

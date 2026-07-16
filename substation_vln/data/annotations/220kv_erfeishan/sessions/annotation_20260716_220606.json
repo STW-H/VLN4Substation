@@ -1,0 +1,2766 @@
+{
+  "schema_version": 2,
+  "annotation_kind": "ortho_2d",
+  "image": "/home/he/VLN/substation_vln/data/processed/220kv_erfeishan/orthophoto/axis_corrected_pointcloud_ortho_8k.png",
+  "metadata": "/home/he/VLN/substation_vln/data/processed/220kv_erfeishan/orthophoto/axis_corrected_pointcloud_ortho_8k.json",
+  "saved_at": "2026-07-16T22:11:25",
+  "coordinate_system": "axis_corrected_pointcloud",
+  "pixel_to_world_matrix": [
+    [
+      0.024009753584301494,
+      0.0,
+      519034.08207638183
+    ],
+    [
+      0.0,
+      -0.0240119947711791,
+      3344697.0575866215
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "world_to_pixel_matrix": [
+    [
+      41.64974023947662,
+      0.0,
+      -21617634.693916492
+    ],
+    [
+      -0.0,
+      -41.64585281353929,
+      139292761.36613038
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "image_size": {
+    "width": 8246,
+    "height": 8192
+  },
+  "categories": {
+    "1": {
+      "key": "obstacle",
+      "name": "障碍物",
+      "default_label": "obstacle",
+      "geometry": "polygon"
+    },
+    "2": {
+      "key": "preferred_road",
+      "name": "优先通过区",
+      "default_label": "preferred_road",
+      "geometry": "polygon"
+    },
+    "3": {
+      "key": "planning_boundary",
+      "name": "规划边界",
+      "default_label": "planning_boundary",
+      "geometry": "polygon",
+      "single": true
+    },
+    "4": {
+      "key": "preferred_path",
+      "name": "优先路径",
+      "default_label": "preferred_path",
+      "geometry": "directed_polyline"
+    },
+    "5": {
+      "key": "narrow_space",
+      "name": "狭窄空间",
+      "default_label": "narrow_space",
+      "geometry": "polygon"
+    },
+    "6": {
+      "key": "equipment_region",
+      "name": "巡视设备区域",
+      "default_label": "equipment",
+      "geometry": "polygon"
+    }
+  },
+  "obstacle_shape_options": {
+    "1": {
+      "key": "polygon",
+      "name": "多边形",
+      "geometry": "polygon"
+    },
+    "2": {
+      "key": "rectangle",
+      "name": "矩形",
+      "geometry": "rectangle"
+    },
+    "3": {
+      "key": "circle",
+      "name": "圆形",
+      "geometry": "circle"
+    }
+  },
+  "preferred_path_options": {
+    "1": {
+      "key": "directed",
+      "name": "有向路径",
+      "geometry": "directed_polyline"
+    },
+    "2": {
+      "key": "undirected",
+      "name": "无向路径",
+      "geometry": "polyline"
+    }
+  },
+  "annotations": [
+    {
+      "id": 1,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "1#duanluqi_1",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        30,
+        30,
+        255
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            3132.82868649018,
+            2405.87886922054
+          ],
+          "radius_pixel": 20.823898034500207,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            3132.82868649018,
+            2405.87886922054
+          ],
+          "radius_pixel": 20.823898034500207,
+          "center_xy": [
+            519109.3005211663,
+            3344639.287635794
+          ],
+          "radius_x_xy": 0.4999766604742035,
+          "radius_y_xy": 0.500023331027478,
+          "radius_xy": 0.49999999575084075,
+          "area_pixel": 1362.3036800713217,
+          "area_xy": 0.7853981483376132,
+          "bbox_pixel": {
+            "min": [
+              3112.0047884556798,
+              2385.0549711860394
+            ],
+            "max": [
+              3153.6525845246806,
+              2426.7027672550403
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519108.8005445058,
+              3344638.787612463
+            ],
+            "max": [
+              519109.80049782677,
+              3344639.7876591245
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          3112.0047884556798,
+          2385.0549711860394
+        ],
+        "max": [
+          3153.6525845246806,
+          2426.7027672550403
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519108.8005445058,
+          3344638.787612463
+        ],
+        "max": [
+          519109.80049782677,
+          3344639.7876591245
+        ]
+      },
+      "area_pixel": 1362.3036800713217,
+      "area_xy": 0.7853981483376132,
+      "count": 1,
+      "equipment_id": "1#duanluqi_1",
+      "equipment_name": "1#duanluqi_1",
+      "equipment_group_name": "1#duanluqi",
+      "equipment_type": "duanluqi",
+      "batch_primitive_index": 1,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 2,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "1#duanluqi_2",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        0,
+        145,
+        255
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            3276.89756540524,
+            2409.45082489612
+          ],
+          "radius_pixel": 20.823898236427116,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            3276.89756540524,
+            2409.45082489612
+          ],
+          "radius_pixel": 20.823898236427116,
+          "center_xy": [
+            519112.7595794482,
+            3344639.2018660125
+          ],
+          "radius_x_xy": 0.4999766653054394,
+          "radius_y_xy": 0.5000233352184296,
+          "radius_xy": 0.5000000002619345,
+          "area_pixel": 1362.3037064915216,
+          "area_xy": 0.785398162509679,
+          "bbox_pixel": {
+            "min": [
+              3256.073667168813,
+              2388.626926659693
+            ],
+            "max": [
+              3297.7214636416675,
+              2430.2747231325475
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519112.2596027829,
+              3344638.7018426773
+            ],
+            "max": [
+              519113.2595561135,
+              3344639.701889348
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          3256.073667168813,
+          2388.626926659693
+        ],
+        "max": [
+          3297.7214636416675,
+          2430.2747231325475
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519112.2596027829,
+          3344638.7018426773
+        ],
+        "max": [
+          519113.2595561135,
+          3344639.701889348
+        ]
+      },
+      "area_pixel": 1362.3037064915216,
+      "area_xy": 0.785398162509679,
+      "count": 1,
+      "equipment_id": "1#duanluqi_2",
+      "equipment_name": "1#duanluqi_2",
+      "equipment_group_name": "1#duanluqi",
+      "equipment_type": "duanluqi",
+      "batch_primitive_index": 2,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 3,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "1#duanluqi_3",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        255,
+        90,
+        20
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            3423.34774810402,
+            2409.45082489612
+          ],
+          "radius_pixel": 20.823898236427116,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            3423.34774810402,
+            2409.45082489612
+          ],
+          "radius_pixel": 20.823898236427116,
+          "center_xy": [
+            519116.2758122472,
+            3344639.2018660125
+          ],
+          "radius_x_xy": 0.4999766653054394,
+          "radius_y_xy": 0.5000233352184296,
+          "radius_xy": 0.5000000002619345,
+          "area_pixel": 1362.3037064915216,
+          "area_xy": 0.785398162509679,
+          "bbox_pixel": {
+            "min": [
+              3402.5238498675926,
+              2388.626926659693
+            ],
+            "max": [
+              3444.1716463404473,
+              2430.2747231325475
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519115.7758355819,
+              3344638.7018426773
+            ],
+            "max": [
+              519116.7757889125,
+              3344639.701889348
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          3402.5238498675926,
+          2388.626926659693
+        ],
+        "max": [
+          3444.1716463404473,
+          2430.2747231325475
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519115.7758355819,
+          3344638.7018426773
+        ],
+        "max": [
+          519116.7757889125,
+          3344639.701889348
+        ]
+      },
+      "area_pixel": 1362.3037064915216,
+      "area_xy": 0.785398162509679,
+      "count": 1,
+      "equipment_id": "1#duanluqi_3",
+      "equipment_name": "1#duanluqi_3",
+      "equipment_group_name": "1#duanluqi",
+      "equipment_type": "duanluqi",
+      "batch_primitive_index": 3,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 4,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "2#duanluqi_1",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        60,
+        210,
+        60
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            3563.7457992532045,
+            6020.596088402481
+          ],
+          "radius_pixel": 20.823898236427116,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            3563.7457992532045,
+            6020.596088402481
+          ],
+          "radius_pixel": 20.823898236427116,
+          "center_xy": [
+            519119.646734859,
+            3344552.4910648274
+          ],
+          "radius_x_xy": 0.4999766653054394,
+          "radius_y_xy": 0.5000233356840909,
+          "radius_xy": 0.5000000004947651,
+          "area_pixel": 1362.3037064915216,
+          "area_xy": 0.7853981632411039,
+          "bbox_pixel": {
+            "min": [
+              3542.921901016777,
+              5999.772190166053
+            ],
+            "max": [
+              3584.569697489632,
+              6041.419986638908
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519119.1467581937,
+              3344551.9910414917
+            ],
+            "max": [
+              519120.1467115243,
+              3344552.991088163
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          3542.921901016777,
+          5999.772190166053
+        ],
+        "max": [
+          3584.569697489632,
+          6041.419986638908
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519119.1467581937,
+          3344551.9910414917
+        ],
+        "max": [
+          519120.1467115243,
+          3344552.991088163
+        ]
+      },
+      "area_pixel": 1362.3037064915216,
+      "area_xy": 0.7853981632411039,
+      "count": 1,
+      "equipment_id": "2#duanluqi_1",
+      "equipment_name": "2#duanluqi_1",
+      "equipment_group_name": "2#duanluqi",
+      "equipment_type": "duanluqi",
+      "batch_primitive_index": 1,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 5,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "2#duanluqi_2",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        255,
+        20,
+        220
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            3635.0152871383566,
+            6022.632359484914
+          ],
+          "radius_pixel": 20.823898261667978,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            3635.0152871383566,
+            6022.632359484914
+          ],
+          "radius_pixel": 20.823898261667978,
+          "center_xy": [
+            519121.3578977012,
+            3344552.442169897
+          ],
+          "radius_x_xy": 0.499976665887516,
+          "radius_y_xy": 0.5000233361497521,
+          "radius_xy": 0.5000000010186341,
+          "area_pixel": 1362.303709794046,
+          "area_xy": 0.7853981648868953,
+          "bbox_pixel": {
+            "min": [
+              3614.1913888766885,
+              6001.808461223246
+            ],
+            "max": [
+              3655.8391854000247,
+              6043.456257746581
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519120.85792103526,
+              3344551.9421465606
+            ],
+            "max": [
+              519121.8578743671,
+              3344552.942193233
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          3614.1913888766885,
+          6001.808461223246
+        ],
+        "max": [
+          3655.8391854000247,
+          6043.456257746581
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519120.85792103526,
+          3344551.9421465606
+        ],
+        "max": [
+          519121.8578743671,
+          3344552.942193233
+        ]
+      },
+      "area_pixel": 1362.303709794046,
+      "area_xy": 0.7853981648868953,
+      "count": 1,
+      "equipment_id": "2#duanluqi_2",
+      "equipment_name": "2#duanluqi_2",
+      "equipment_group_name": "2#duanluqi",
+      "equipment_type": "duanluqi",
+      "batch_primitive_index": 2,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 6,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "2#duanluqi_3",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        210,
+        210,
+        0
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            3705.2666394822922,
+            6019.577952861265
+          ],
+          "radius_pixel": 20.823898236427116,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            3705.2666394822922,
+            6019.577952861265
+          ],
+          "radius_pixel": 20.823898236427116,
+          "center_xy": [
+            519123.0446153599,
+            3344552.5155122927
+          ],
+          "radius_x_xy": 0.49997666536364704,
+          "radius_y_xy": 0.5000233356840909,
+          "radius_xy": 0.500000000523869,
+          "area_pixel": 1362.3037064915216,
+          "area_xy": 0.7853981633325406,
+          "bbox_pixel": {
+            "min": [
+              3684.442741245865,
+              5998.754054624837
+            ],
+            "max": [
+              3726.0905377187196,
+              6040.401851097692
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519122.5446386946,
+              3344552.015488957
+            ],
+            "max": [
+              519123.5445920253,
+              3344553.0155356284
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          3684.442741245865,
+          5998.754054624837
+        ],
+        "max": [
+          3726.0905377187196,
+          6040.401851097692
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519122.5446386946,
+          3344552.015488957
+        ],
+        "max": [
+          519123.5445920253,
+          3344553.0155356284
+        ]
+      },
+      "area_pixel": 1362.3037064915216,
+      "area_xy": 0.7853981633325406,
+      "count": 1,
+      "equipment_id": "2#duanluqi_3",
+      "equipment_name": "2#duanluqi_3",
+      "equipment_group_name": "2#duanluqi",
+      "equipment_type": "duanluqi",
+      "batch_primitive_index": 3,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 7,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "1#dianyahuganqi_1",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        30,
+        30,
+        255
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            3552.3170272303482,
+            6691.178887759898
+          ],
+          "radius_pixel": 20.82389805974107,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            3552.3170272303482,
+            6691.178887759898
+          ],
+          "radius_pixel": 20.82389805974107,
+          "center_xy": [
+            519119.37233285897,
+            3344536.3890341558
+          ],
+          "radius_x_xy": 0.49997666105628014,
+          "radius_y_xy": 0.5000233314931393,
+          "radius_xy": 0.4999999962747097,
+          "area_pixel": 1362.3036833738465,
+          "area_xy": 0.7853981499834046,
+          "bbox_pixel": {
+            "min": [
+              3531.493129170607,
+              6670.354989700158
+            ],
+            "max": [
+              3573.1409252900894,
+              6712.002785819639
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519118.87235619785,
+              3344535.8890108243
+            ],
+            "max": [
+              519119.87230952,
+              3344536.889057487
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          3531.493129170607,
+          6670.354989700158
+        ],
+        "max": [
+          3573.1409252900894,
+          6712.002785819639
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519118.87235619785,
+          3344535.8890108243
+        ],
+        "max": [
+          519119.87230952,
+          3344536.889057487
+        ]
+      },
+      "area_pixel": 1362.3036833738465,
+      "area_xy": 0.7853981499834046,
+      "count": 1,
+      "equipment_id": "1#dianyahuganqi_1",
+      "equipment_name": "1#dianyahuganqi_1",
+      "equipment_group_name": "1#dianyahuganqi",
+      "equipment_type": "dianyahuganqi",
+      "batch_primitive_index": 1,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 8,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "1#dianyahuganqi_2",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        0,
+        145,
+        255
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            3636.305815680406,
+            6688.106127206847
+          ],
+          "radius_pixel": 20.823898034500207,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            3636.305815680406,
+            6688.106127206847
+          ],
+          "radius_pixel": 20.823898034500207,
+          "center_xy": [
+            519121.38888297346,
+            3344536.462817266
+          ],
+          "radius_x_xy": 0.4999766604742035,
+          "radius_y_xy": 0.500023331027478,
+          "radius_xy": 0.49999999575084075,
+          "area_pixel": 1362.3036800713217,
+          "area_xy": 0.7853981483376132,
+          "bbox_pixel": {
+            "min": [
+              3615.4819176459055,
+              6667.282229172347
+            ],
+            "max": [
+              3657.1297137149063,
+              6708.930025241348
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519120.888906313,
+              3344535.962793935
+            ],
+            "max": [
+              519121.88885963394,
+              3344536.9628405967
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          3615.4819176459055,
+          6667.282229172347
+        ],
+        "max": [
+          3657.1297137149063,
+          6708.930025241348
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519120.888906313,
+          3344535.962793935
+        ],
+        "max": [
+          519121.88885963394,
+          3344536.9628405967
+        ]
+      },
+      "area_pixel": 1362.3036800713217,
+      "area_xy": 0.7853981483376132,
+      "count": 1,
+      "equipment_id": "1#dianyahuganqi_2",
+      "equipment_name": "1#dianyahuganqi_2",
+      "equipment_group_name": "1#dianyahuganqi",
+      "equipment_type": "dianyahuganqi",
+      "batch_primitive_index": 2,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 9,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "1#dianyahuganqi_3",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        255,
+        90,
+        20
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            3721.3188576481466,
+            6689.130380724531
+          ],
+          "radius_pixel": 20.823898236427116,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            3721.3188576481466,
+            6689.130380724531
+          ],
+          "radius_pixel": 20.823898236427116,
+          "center_xy": [
+            519123.4300251626,
+            3344536.438222896
+          ],
+          "radius_x_xy": 0.4999766653054394,
+          "radius_y_xy": 0.5000233356840909,
+          "radius_xy": 0.5000000004947651,
+          "area_pixel": 1362.3037064915216,
+          "area_xy": 0.7853981632411039,
+          "bbox_pixel": {
+            "min": [
+              3700.4949594117193,
+              6668.306482488104
+            ],
+            "max": [
+              3742.142755884574,
+              6709.954278960959
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519122.9300484973,
+              3344535.93819956
+            ],
+            "max": [
+              519123.9300018279,
+              3344536.9382462315
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          3700.4949594117193,
+          6668.306482488104
+        ],
+        "max": [
+          3742.142755884574,
+          6709.954278960959
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519122.9300484973,
+          3344535.93819956
+        ],
+        "max": [
+          519123.9300018279,
+          3344536.9382462315
+        ]
+      },
+      "area_pixel": 1362.3037064915216,
+      "area_xy": 0.7853981632411039,
+      "count": 1,
+      "equipment_id": "1#dianyahuganqi_3",
+      "equipment_name": "1#dianyahuganqi_3",
+      "equipment_group_name": "1#dianyahuganqi",
+      "equipment_type": "dianyahuganqi",
+      "batch_primitive_index": 3,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 10,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "1#bileiqi_1",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        60,
+        210,
+        60
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            3128.6245969313995,
+            1685.2816693605337
+          ],
+          "radius_pixel": 20.823898261667978,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            3128.6245969313995,
+            1685.2816693605337
+          ],
+          "radius_pixel": 20.823898261667978,
+          "center_xy": [
+            519109.19958201196,
+            3344656.5906119887
+          ],
+          "radius_x_xy": 0.499976665887516,
+          "radius_y_xy": 0.5000233361497521,
+          "radius_xy": 0.5000000010186341,
+          "area_pixel": 1362.303709794046,
+          "area_xy": 0.7853981648868953,
+          "bbox_pixel": {
+            "min": [
+              3107.8006986697314,
+              1664.4577710988656
+            ],
+            "max": [
+              3149.4484951930676,
+              1706.1055676222018
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519108.699605346,
+              3344656.0905886525
+            ],
+            "max": [
+              519109.69955867785,
+              3344657.090635325
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          3107.8006986697314,
+          1664.4577710988656
+        ],
+        "max": [
+          3149.4484951930676,
+          1706.1055676222018
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519108.699605346,
+          3344656.0905886525
+        ],
+        "max": [
+          519109.69955867785,
+          3344657.090635325
+        ]
+      },
+      "area_pixel": 1362.303709794046,
+      "area_xy": 0.7853981648868953,
+      "count": 1,
+      "equipment_id": "1#bileiqi_1",
+      "equipment_name": "1#bileiqi_1",
+      "equipment_group_name": "1#bileiqi",
+      "equipment_type": "bileiqi",
+      "batch_primitive_index": 1,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 11,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "1#bileiqi_2",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        255,
+        20,
+        220
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            3275.960855242525,
+            1683.8512202507168
+          ],
+          "radius_pixel": 20.823898261667978,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            3275.960855242525,
+            1683.8512202507168
+          ],
+          "radius_pixel": 20.823898261667978,
+          "center_xy": [
+            519112.73708926805,
+            3344656.624959925
+          ],
+          "radius_x_xy": 0.499976665887516,
+          "radius_y_xy": 0.5000233361497521,
+          "radius_xy": 0.5000000010186341,
+          "area_pixel": 1362.303709794046,
+          "area_xy": 0.7853981648868953,
+          "bbox_pixel": {
+            "min": [
+              3255.136956980857,
+              1663.0273219890487
+            ],
+            "max": [
+              3296.7847535041933,
+              1704.6751185123849
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519112.2371126021,
+              3344656.124936589
+            ],
+            "max": [
+              519113.23706593394,
+              3344657.1249832613
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          3255.136956980857,
+          1663.0273219890487
+        ],
+        "max": [
+          3296.7847535041933,
+          1704.6751185123849
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519112.2371126021,
+          3344656.124936589
+        ],
+        "max": [
+          519113.23706593394,
+          3344657.1249832613
+        ]
+      },
+      "area_pixel": 1362.303709794046,
+      "area_xy": 0.7853981648868953,
+      "count": 1,
+      "equipment_id": "1#bileiqi_2",
+      "equipment_name": "1#bileiqi_2",
+      "equipment_group_name": "1#bileiqi",
+      "equipment_type": "bileiqi",
+      "batch_primitive_index": 2,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 12,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "1#bileiqi_3",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        210,
+        210,
+        0
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            3419.0057662242,
+            1680.9903220310832
+          ],
+          "radius_pixel": 20.823898034500207,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            3419.0057662242,
+            1680.9903220310832
+          ],
+          "radius_pixel": 20.823898034500207,
+          "center_xy": [
+            519116.1715623322,
+            3344656.6936557987
+          ],
+          "radius_x_xy": 0.4999766604742035,
+          "radius_y_xy": 0.500023331027478,
+          "radius_xy": 0.49999999575084075,
+          "area_pixel": 1362.3036800713217,
+          "area_xy": 0.7853981483376132,
+          "bbox_pixel": {
+            "min": [
+              3398.1818681897,
+              1660.166423996583
+            ],
+            "max": [
+              3439.8296642587006,
+              1701.8142200655834
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519115.6715856717,
+              3344656.1936324676
+            ],
+            "max": [
+              519116.67153899267,
+              3344657.1936791292
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          3398.1818681897,
+          1660.166423996583
+        ],
+        "max": [
+          3439.8296642587006,
+          1701.8142200655834
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519115.6715856717,
+          3344656.1936324676
+        ],
+        "max": [
+          519116.67153899267,
+          3344657.1936791292
+        ]
+      },
+      "area_pixel": 1362.3036800713217,
+      "area_xy": 0.7853981483376132,
+      "count": 1,
+      "equipment_id": "1#bileiqi_3",
+      "equipment_name": "1#bileiqi_3",
+      "equipment_group_name": "1#bileiqi",
+      "equipment_type": "bileiqi",
+      "batch_primitive_index": 3,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 13,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "2#dianyahuganqi_1",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        30,
+        30,
+        255
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            5300.332435455191,
+            1545.097656598492
+          ],
+          "radius_pixel": 20.823898034500207,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            5300.332435455191,
+            1545.097656598492
+          ],
+          "radius_pixel": 20.823898034500207,
+          "center_xy": [
+            519161.341752072,
+            3344659.9567097705
+          ],
+          "radius_x_xy": 0.4999766604742035,
+          "radius_y_xy": 0.500023331027478,
+          "radius_xy": 0.49999999575084075,
+          "area_pixel": 1362.3036800713217,
+          "area_xy": 0.7853981483376132,
+          "bbox_pixel": {
+            "min": [
+              5279.508537420691,
+              1524.2737585639918
+            ],
+            "max": [
+              5321.156333489692,
+              1565.9215546329922
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519160.8417754115,
+              3344659.4566864395
+            ],
+            "max": [
+              519161.84172873246,
+              3344660.456733101
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          5279.508537420691,
+          1524.2737585639918
+        ],
+        "max": [
+          5321.156333489692,
+          1565.9215546329922
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519160.8417754115,
+          3344659.4566864395
+        ],
+        "max": [
+          519161.84172873246,
+          3344660.456733101
+        ]
+      },
+      "area_pixel": 1362.3036800713217,
+      "area_xy": 0.7853981483376132,
+      "count": 1,
+      "equipment_id": "2#dianyahuganqi_1",
+      "equipment_name": "2#dianyahuganqi_1",
+      "equipment_group_name": "2#dianyahuganqi",
+      "equipment_type": "dianyahuganqi",
+      "batch_primitive_index": 1,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 14,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "2#dianyahuganqi_2",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        0,
+        145,
+        255
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            5441.94689732705,
+            1542.2367583788584
+          ],
+          "radius_pixel": 20.823898236427116,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            5441.94689732705,
+            1542.2367583788584
+          ],
+          "radius_pixel": 20.823898236427116,
+          "center_xy": [
+            519164.7418804055,
+            3344660.0254056435
+          ],
+          "radius_x_xy": 0.4999766653054394,
+          "radius_y_xy": 0.5000233356840909,
+          "radius_xy": 0.5000000004947651,
+          "area_pixel": 1362.3037064915216,
+          "area_xy": 0.7853981632411039,
+          "bbox_pixel": {
+            "min": [
+              5421.122999090622,
+              1521.4128601424313
+            ],
+            "max": [
+              5462.770795563477,
+              1563.0606566152856
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519164.2419037402,
+              3344659.525382308
+            ],
+            "max": [
+              519165.2418570708,
+              3344660.5254289787
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          5421.122999090622,
+          1521.4128601424313
+        ],
+        "max": [
+          5462.770795563477,
+          1563.0606566152856
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519164.2419037402,
+          3344659.525382308
+        ],
+        "max": [
+          519165.2418570708,
+          3344660.5254289787
+        ]
+      },
+      "area_pixel": 1362.3037064915216,
+      "area_xy": 0.7853981632411039,
+      "count": 1,
+      "equipment_id": "2#dianyahuganqi_2",
+      "equipment_name": "2#dianyahuganqi_2",
+      "equipment_group_name": "2#dianyahuganqi",
+      "equipment_type": "dianyahuganqi",
+      "batch_primitive_index": 2,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 15,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "2#dianyahuganqi_3",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        255,
+        90,
+        20
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            5590.713604747992,
+            1546.5281057083087
+          ],
+          "radius_pixel": 20.823898034500207,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            5590.713604747992,
+            1546.5281057083087
+          ],
+          "radius_pixel": 20.823898034500207,
+          "center_xy": [
+            519168.3137323922,
+            3344659.922361834
+          ],
+          "radius_x_xy": 0.4999766604742035,
+          "radius_y_xy": 0.500023331027478,
+          "radius_xy": 0.49999999575084075,
+          "area_pixel": 1362.3036800713217,
+          "area_xy": 0.7853981483376132,
+          "bbox_pixel": {
+            "min": [
+              5569.889706713491,
+              1525.7042076738085
+            ],
+            "max": [
+              5611.537502782492,
+              1567.3520037428088
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519167.81375573174,
+              3344659.422338503
+            ],
+            "max": [
+              519168.8137090527,
+              3344660.4223851645
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          5569.889706713491,
+          1525.7042076738085
+        ],
+        "max": [
+          5611.537502782492,
+          1567.3520037428088
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519167.81375573174,
+          3344659.422338503
+        ],
+        "max": [
+          519168.8137090527,
+          3344660.4223851645
+        ]
+      },
+      "area_pixel": 1362.3036800713217,
+      "area_xy": 0.7853981483376132,
+      "count": 1,
+      "equipment_id": "2#dianyahuganqi_3",
+      "equipment_name": "2#dianyahuganqi_3",
+      "equipment_group_name": "2#dianyahuganqi",
+      "equipment_type": "dianyahuganqi",
+      "batch_primitive_index": 3,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 16,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "1#dianliuhuganqi_1",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        60,
+        210,
+        60
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            5297.471537235558,
+            2036.0277910876011
+          ],
+          "radius_pixel": 20.823898236427116,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            5297.471537235558,
+            2036.0277910876011
+          ],
+          "radius_pixel": 20.823898236427116,
+          "center_xy": [
+            519161.2730626107,
+            3344648.168497948
+          ],
+          "radius_x_xy": 0.4999766653054394,
+          "radius_y_xy": 0.5000233356840909,
+          "radius_xy": 0.5000000004947651,
+          "area_pixel": 1362.3037064915216,
+          "area_xy": 0.7853981632411039,
+          "bbox_pixel": {
+            "min": [
+              5276.64763899913,
+              2015.203892851174
+            ],
+            "max": [
+              5318.295435471985,
+              2056.8516893240285
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519160.7730859454,
+              3344647.6684746123
+            ],
+            "max": [
+              519161.773039276,
+              3344648.6685212837
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          5276.64763899913,
+          2015.203892851174
+        ],
+        "max": [
+          5318.295435471985,
+          2056.8516893240285
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519160.7730859454,
+          3344647.6684746123
+        ],
+        "max": [
+          519161.773039276,
+          3344648.6685212837
+        ]
+      },
+      "area_pixel": 1362.3037064915216,
+      "area_xy": 0.7853981632411039,
+      "count": 1,
+      "equipment_id": "1#dianliuhuganqi_1",
+      "equipment_name": "1#dianliuhuganqi_1",
+      "equipment_group_name": "1#dianliuhuganqi",
+      "equipment_type": "dianliuhuganqi",
+      "batch_primitive_index": 1,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 17,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "1#dianliuhuganqi_2",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        255,
+        20,
+        220
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            5444.807795546683,
+            2034.5973419777845
+          ],
+          "radius_pixel": 20.823898236427116,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            5444.807795546683,
+            2034.5973419777845
+          ],
+          "radius_pixel": 20.823898236427116,
+          "center_xy": [
+            519164.8105698668,
+            3344648.2028458845
+          ],
+          "radius_x_xy": 0.4999766653054394,
+          "radius_y_xy": 0.5000233356840909,
+          "radius_xy": 0.5000000004947651,
+          "area_pixel": 1362.3037064915216,
+          "area_xy": 0.7853981632411039,
+          "bbox_pixel": {
+            "min": [
+              5423.983897310256,
+              2013.7734437413574
+            ],
+            "max": [
+              5465.631693783111,
+              2055.4212402142116
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519164.3105932015,
+              3344647.702822549
+            ],
+            "max": [
+              519165.3105465321,
+              3344648.70286922
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          5423.983897310256,
+          2013.7734437413574
+        ],
+        "max": [
+          5465.631693783111,
+          2055.4212402142116
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519164.3105932015,
+          3344647.702822549
+        ],
+        "max": [
+          519165.3105465321,
+          3344648.70286922
+        ]
+      },
+      "area_pixel": 1362.3037064915216,
+      "area_xy": 0.7853981632411039,
+      "count": 1,
+      "equipment_id": "1#dianliuhuganqi_2",
+      "equipment_name": "1#dianliuhuganqi_2",
+      "equipment_group_name": "1#dianliuhuganqi",
+      "equipment_type": "dianliuhuganqi",
+      "batch_primitive_index": 2,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 18,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "1#dianliuhuganqi_3",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        210,
+        210,
+        0
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            5589.283155638175,
+            2033.1668928679676
+          ],
+          "radius_pixel": 20.823898236427116,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            5589.283155638175,
+            2033.1668928679676
+          ],
+          "radius_pixel": 20.823898236427116,
+          "center_xy": [
+            519168.2793876616,
+            3344648.237193821
+          ],
+          "radius_x_xy": 0.4999766653054394,
+          "radius_y_xy": 0.5000233356840909,
+          "radius_xy": 0.5000000004947651,
+          "area_pixel": 1362.3037064915216,
+          "area_xy": 0.7853981632411039,
+          "bbox_pixel": {
+            "min": [
+              5568.459257401748,
+              2012.3429946315405
+            ],
+            "max": [
+              5610.107053874603,
+              2053.9907911043947
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519167.7794109963,
+              3344647.7371704853
+            ],
+            "max": [
+              519168.7793643269,
+              3344648.7372171567
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          5568.459257401748,
+          2012.3429946315405
+        ],
+        "max": [
+          5610.107053874603,
+          2053.9907911043947
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519167.7794109963,
+          3344647.7371704853
+        ],
+        "max": [
+          519168.7793643269,
+          3344648.7372171567
+        ]
+      },
+      "area_pixel": 1362.3037064915216,
+      "area_xy": 0.7853981632411039,
+      "count": 1,
+      "equipment_id": "1#dianliuhuganqi_3",
+      "equipment_name": "1#dianliuhuganqi_3",
+      "equipment_group_name": "1#dianliuhuganqi",
+      "equipment_type": "dianliuhuganqi",
+      "batch_primitive_index": 3,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 19,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "2#dianliuhuganqi_1",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        30,
+        30,
+        255
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            4561.008497883311,
+            6326.309534652032
+          ],
+          "radius_pixel": 20.823898236427116,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            4561.008497883311,
+            6326.309534652032
+          ],
+          "radius_pixel": 20.823898236427116,
+          "center_xy": [
+            519143.5907665119,
+            3344545.1502751545
+          ],
+          "radius_x_xy": 0.4999766653054394,
+          "radius_y_xy": 0.5000233356840909,
+          "radius_xy": 0.5000000004947651,
+          "area_pixel": 1362.3037064915216,
+          "area_xy": 0.7853981632411039,
+          "bbox_pixel": {
+            "min": [
+              4540.184599646884,
+              6305.485636415605
+            ],
+            "max": [
+              4581.832396119738,
+              6347.1334328884595
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519143.0907898466,
+              3344544.650251819
+            ],
+            "max": [
+              519144.0907431772,
+              3344545.65029849
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          4540.184599646884,
+          6305.485636415605
+        ],
+        "max": [
+          4581.832396119738,
+          6347.1334328884595
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519143.0907898466,
+          3344544.650251819
+        ],
+        "max": [
+          519144.0907431772,
+          3344545.65029849
+        ]
+      },
+      "area_pixel": 1362.3037064915216,
+      "area_xy": 0.7853981632411039,
+      "count": 1,
+      "equipment_id": "2#dianliuhuganqi_1",
+      "equipment_name": "2#dianliuhuganqi_1",
+      "equipment_group_name": "2#dianliuhuganqi",
+      "equipment_type": "dianliuhuganqi",
+      "batch_primitive_index": 1,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 20,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "2#dianliuhuganqi_2",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        0,
+        145,
+        255
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            4632.960731809193,
+            6329.187624009068
+          ],
+          "radius_pixel": 20.823898236427116,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            4632.960731809193,
+            6329.187624009068
+          ],
+          "radius_pixel": 20.823898236427116,
+          "center_xy": [
+            519145.3183219183,
+            3344545.081166488
+          ],
+          "radius_x_xy": 0.4999766653054394,
+          "radius_y_xy": 0.5000233356840909,
+          "radius_xy": 0.5000000004947651,
+          "area_pixel": 1362.3037064915216,
+          "area_xy": 0.7853981632411039,
+          "bbox_pixel": {
+            "min": [
+              4612.136833572766,
+              6308.3637257726405
+            ],
+            "max": [
+              4653.78463004562,
+              6350.011522245495
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519144.818345253,
+              3344544.5811431524
+            ],
+            "max": [
+              519145.8182985836,
+              3344545.5811898233
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          4612.136833572766,
+          6308.3637257726405
+        ],
+        "max": [
+          4653.78463004562,
+          6350.011522245495
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519144.818345253,
+          3344544.5811431524
+        ],
+        "max": [
+          519145.8182985836,
+          3344545.5811898233
+        ]
+      },
+      "area_pixel": 1362.3037064915216,
+      "area_xy": 0.7853981632411039,
+      "count": 1,
+      "equipment_id": "2#dianliuhuganqi_2",
+      "equipment_name": "2#dianliuhuganqi_2",
+      "equipment_group_name": "2#dianliuhuganqi",
+      "equipment_type": "dianliuhuganqi",
+      "batch_primitive_index": 2,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 21,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "2#dianliuhuganqi_3",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        255,
+        90,
+        20
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            4704.912965735075,
+            6326.309534652032
+          ],
+          "radius_pixel": 20.823898236427116,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            4704.912965735075,
+            6326.309534652032
+          ],
+          "radius_pixel": 20.823898236427116,
+          "center_xy": [
+            519147.0458773247,
+            3344545.1502751545
+          ],
+          "radius_x_xy": 0.4999766653054394,
+          "radius_y_xy": 0.5000233356840909,
+          "radius_xy": 0.5000000004947651,
+          "area_pixel": 1362.3037064915216,
+          "area_xy": 0.7853981632411039,
+          "bbox_pixel": {
+            "min": [
+              4684.089067498648,
+              6305.485636415605
+            ],
+            "max": [
+              4725.736863971502,
+              6347.1334328884595
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519146.5459006594,
+              3344544.650251819
+            ],
+            "max": [
+              519147.54585399,
+              3344545.65029849
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          4684.089067498648,
+          6305.485636415605
+        ],
+        "max": [
+          4725.736863971502,
+          6347.1334328884595
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519146.5459006594,
+          3344544.650251819
+        ],
+        "max": [
+          519147.54585399,
+          3344545.65029849
+        ]
+      },
+      "area_pixel": 1362.3037064915216,
+      "area_xy": 0.7853981632411039,
+      "count": 1,
+      "equipment_id": "2#dianliuhuganqi_3",
+      "equipment_name": "2#dianliuhuganqi_3",
+      "equipment_group_name": "2#dianliuhuganqi",
+      "equipment_type": "dianliuhuganqi",
+      "batch_primitive_index": 3,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 22,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "1#zhubian",
+      "selection_type": "image_multi_rectangle",
+      "geometry_type": "multi_polygon",
+      "color_bgr": [
+        60,
+        210,
+        60
+      ],
+      "shape": "rectangle",
+      "shape_name": "矩形",
+      "polygons_pixel": [
+        [
+          [
+            3958.267857127488,
+            4144.563684402402
+          ],
+          [
+            4376.4539295487175,
+            4144.563684402402
+          ],
+          [
+            4376.4539295487175,
+            4466.915448560433
+          ],
+          [
+            3958.267857127488,
+            4466.915448560433
+          ]
+        ]
+      ],
+      "polygons_xy": [
+        [
+          [
+            519129.11911225214,
+            3344597.5383451027
+          ],
+          [
+            519139.15965680336,
+            3344597.5383451027
+          ],
+          [
+            519139.15965680336,
+            3344589.7980362275
+          ],
+          [
+            519129.11911225214,
+            3344589.7980362275
+          ]
+        ]
+      ],
+      "bbox_pixel": {
+        "min": [
+          3958.267857127488,
+          4144.563684402402
+        ],
+        "max": [
+          4376.4539295487175,
+          4466.915448560433
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519129.11911225214,
+          3344589.7980362275
+        ],
+        "max": [
+          519139.15965680336,
+          3344597.5383451027
+        ]
+      },
+      "area_pixel": 134803.01819130033,
+      "area_xy": 77.71728515625,
+      "equipment_id": "1#zhubian",
+      "equipment_name": "1#zhubian",
+      "equipment_group_name": "1#zhubian",
+      "equipment_type": "bianyaqi",
+      "batch_primitive_index": 1,
+      "batch_primitive_count": 1
+    },
+    {
+      "id": 23,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "2#zhubian",
+      "selection_type": "image_multi_rectangle",
+      "geometry_type": "multi_polygon",
+      "color_bgr": [
+        255,
+        20,
+        220
+      ],
+      "shape": "rectangle",
+      "shape_name": "矩形",
+      "polygons_pixel": [
+        [
+          [
+            6333.071056589022,
+            4144.563684402402
+          ],
+          [
+            6746.901024089198,
+            4144.563684402402
+          ],
+          [
+            6746.901024089198,
+            4466.915448560433
+          ],
+          [
+            6333.071056589022,
+            4466.915448560433
+          ]
+        ]
+      ],
+      "polygons_xy": [
+        [
+          [
+            519186.1375518824,
+            3344597.5383451027
+          ],
+          [
+            519196.0735074279,
+            3344597.5383451027
+          ],
+          [
+            519196.0735074279,
+            3344589.7980362275
+          ],
+          [
+            519186.1375518824,
+            3344589.7980362275
+          ]
+        ]
+      ],
+      "bbox_pixel": {
+        "min": [
+          6333.071056589022,
+          4144.563684402402
+        ],
+        "max": [
+          6746.901024089198,
+          4466.915448560433
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519186.1375518824,
+          3344589.7980362275
+        ],
+        "max": [
+          519196.0735074279,
+          3344597.5383451027
+        ]
+      },
+      "area_pixel": 133398.82008513808,
+      "area_xy": 76.9072265625,
+      "equipment_id": "2#zhubian",
+      "equipment_name": "2#zhubian",
+      "equipment_group_name": "2#zhubian",
+      "equipment_type": "bianyaqi",
+      "batch_primitive_index": 1,
+      "batch_primitive_count": 1
+    },
+    {
+      "id": 24,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "1#daozha_1",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        210,
+        210,
+        0
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            5296.6477477584,
+            2580.8165703592936
+          ],
+          "radius_pixel": 20.823898261667978,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            5296.6477477584,
+            2580.8165703592936
+          ],
+          "radius_pixel": 20.823898261667978,
+          "center_xy": [
+            519161.2532836284,
+            3344635.0870326287
+          ],
+          "radius_x_xy": 0.499976665887516,
+          "radius_y_xy": 0.5000233361497521,
+          "radius_xy": 0.5000000010186341,
+          "area_pixel": 1362.303709794046,
+          "area_xy": 0.7853981648868953,
+          "bbox_pixel": {
+            "min": [
+              5275.823849496733,
+              2559.9926720976255
+            ],
+            "max": [
+              5317.471646020068,
+              2601.6404686209617
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519160.75330696243,
+              3344634.5870092926
+            ],
+            "max": [
+              519161.75326029427,
+              3344635.587055965
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          5275.823849496733,
+          2559.9926720976255
+        ],
+        "max": [
+          5317.471646020068,
+          2601.6404686209617
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519160.75330696243,
+          3344634.5870092926
+        ],
+        "max": [
+          519161.75326029427,
+          3344635.587055965
+        ]
+      },
+      "area_pixel": 1362.303709794046,
+      "area_xy": 0.7853981648868953,
+      "count": 1,
+      "equipment_id": "1#daozha_1",
+      "equipment_name": "1#daozha_1",
+      "equipment_group_name": "1#daozha",
+      "equipment_type": "daozha",
+      "batch_primitive_index": 1,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 25,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "1#daozha_2",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        30,
+        30,
+        255
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            5445.071081738096,
+            2705.7272969758696
+          ],
+          "radius_pixel": 20.823898236427116,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            5445.071081738096,
+            2705.7272969758696
+          ],
+          "radius_pixel": 20.823898236427116,
+          "center_xy": [
+            519164.81689130334,
+            3344632.0876769144
+          ],
+          "radius_x_xy": 0.49997666536364704,
+          "radius_y_xy": 0.5000233356840909,
+          "radius_xy": 0.500000000523869,
+          "area_pixel": 1362.3037064915216,
+          "area_xy": 0.7853981633325406,
+          "bbox_pixel": {
+            "min": [
+              5424.247183501669,
+              2684.9033987394423
+            ],
+            "max": [
+              5465.894979974523,
+              2726.551195212297
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519164.31691463804,
+              3344631.5876535787
+            ],
+            "max": [
+              519165.3168679687,
+              3344632.5877002496
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          5424.247183501669,
+          2684.9033987394423
+        ],
+        "max": [
+          5465.894979974523,
+          2726.551195212297
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519164.31691463804,
+          3344631.5876535787
+        ],
+        "max": [
+          519165.3168679687,
+          3344632.5877002496
+        ]
+      },
+      "area_pixel": 1362.3037064915216,
+      "area_xy": 0.7853981633325406,
+      "count": 1,
+      "equipment_id": "1#daozha_2",
+      "equipment_name": "1#daozha_2",
+      "equipment_group_name": "1#daozha",
+      "equipment_type": "daozha",
+      "batch_primitive_index": 2,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 26,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "1#daozha_3",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        0,
+        145,
+        255
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            5587.616263877013,
+            2827.698947672056
+          ],
+          "radius_pixel": 20.823898236427116,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            5587.616263877013,
+            2827.698947672056
+          ],
+          "radius_pixel": 20.823898236427116,
+          "center_xy": [
+            519168.23936600116,
+            3344629.1588942753
+          ],
+          "radius_x_xy": 0.4999766653054394,
+          "radius_y_xy": 0.5000233352184296,
+          "radius_xy": 0.5000000002619345,
+          "area_pixel": 1362.3037064915216,
+          "area_xy": 0.785398162509679,
+          "bbox_pixel": {
+            "min": [
+              5566.792365640586,
+              2806.8750494356286
+            ],
+            "max": [
+              5608.44016211344,
+              2848.5228459084833
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519167.73938933585,
+              3344628.65887094
+            ],
+            "max": [
+              519168.73934266646,
+              3344629.658917611
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          5566.792365640586,
+          2806.8750494356286
+        ],
+        "max": [
+          5608.44016211344,
+          2848.5228459084833
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519167.73938933585,
+          3344628.65887094
+        ],
+        "max": [
+          519168.73934266646,
+          3344629.658917611
+        ]
+      },
+      "area_pixel": 1362.3037064915216,
+      "area_xy": 0.785398162509679,
+      "count": 1,
+      "equipment_id": "1#daozha_3",
+      "equipment_name": "1#daozha_3",
+      "equipment_group_name": "1#daozha",
+      "equipment_type": "daozha",
+      "batch_primitive_index": 3,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 27,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "2#daozha_1",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        255,
+        90,
+        20
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            5551.494937251258,
+            5881.838382858843
+          ],
+          "radius_pixel": 20.823898261667978,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            5551.494937251258,
+            5881.838382858843
+          ],
+          "radius_pixel": 20.823898261667978,
+          "center_xy": [
+            519167.37210184976,
+            3344555.8229141273
+          ],
+          "radius_x_xy": 0.499976665887516,
+          "radius_y_xy": 0.5000233361497521,
+          "radius_xy": 0.5000000010186341,
+          "area_pixel": 1362.303709794046,
+          "area_xy": 0.7853981648868953,
+          "bbox_pixel": {
+            "min": [
+              5530.671038989591,
+              5861.014484597175
+            ],
+            "max": [
+              5572.318835512926,
+              5902.662281120511
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519166.8721251838,
+              3344555.322890791
+            ],
+            "max": [
+              519167.87207851565,
+              3344556.3229374634
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          5530.671038989591,
+          5861.014484597175
+        ],
+        "max": [
+          5572.318835512926,
+          5902.662281120511
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519166.8721251838,
+          3344555.322890791
+        ],
+        "max": [
+          519167.87207851565,
+          3344556.3229374634
+        ]
+      },
+      "area_pixel": 1362.303709794046,
+      "area_xy": 0.7853981648868953,
+      "count": 1,
+      "equipment_id": "2#daozha_1",
+      "equipment_name": "2#daozha_1",
+      "equipment_group_name": "2#daozha",
+      "equipment_type": "daozha",
+      "batch_primitive_index": 1,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 28,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "2#daozha_2",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        60,
+        210,
+        60
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            5638.2723061942315,
+            5819.701501393504
+          ],
+          "radius_pixel": 20.823898236427116,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            5638.2723061942315,
+            5819.701501393504
+          ],
+          "radius_pixel": 20.823898236427116,
+          "center_xy": [
+            519169.4556050947,
+            3344557.3149446
+          ],
+          "radius_x_xy": 0.49997666536364704,
+          "radius_y_xy": 0.5000233356840909,
+          "radius_xy": 0.500000000523869,
+          "area_pixel": 1362.3037064915216,
+          "area_xy": 0.7853981633325406,
+          "bbox_pixel": {
+            "min": [
+              5617.448407957804,
+              5798.877603157077
+            ],
+            "max": [
+              5659.096204430659,
+              5840.525399629932
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519168.9556284294,
+              3344556.8149212645
+            ],
+            "max": [
+              519169.9555817601,
+              3344557.814967936
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          5617.448407957804,
+          5798.877603157077
+        ],
+        "max": [
+          5659.096204430659,
+          5840.525399629932
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519168.9556284294,
+          3344556.8149212645
+        ],
+        "max": [
+          519169.9555817601,
+          3344557.814967936
+        ]
+      },
+      "area_pixel": 1362.3037064915216,
+      "area_xy": 0.7853981633325406,
+      "count": 1,
+      "equipment_id": "2#daozha_2",
+      "equipment_name": "2#daozha_2",
+      "equipment_group_name": "2#daozha",
+      "equipment_type": "daozha",
+      "batch_primitive_index": 2,
+      "batch_primitive_count": 3
+    },
+    {
+      "id": 29,
+      "category": "equipment_region",
+      "category_name": "巡视设备区域",
+      "label": "2#daozha_3",
+      "selection_type": "image_multi_circle",
+      "geometry_type": "multi_circle",
+      "color_bgr": [
+        255,
+        20,
+        220
+      ],
+      "shape": "circle",
+      "shape_name": "圆形",
+      "circles_pixel": [
+        {
+          "center_pixel": [
+            5717.550396339663,
+            5760.778596555683
+          ],
+          "radius_pixel": 20.823898236427116,
+          "default_radius_m": 0.5
+        }
+      ],
+      "circles": [
+        {
+          "center_pixel": [
+            5717.550396339663,
+            5760.778596555683
+          ],
+          "radius_pixel": 20.823898236427116,
+          "center_xy": [
+            519171.3590525038,
+            3344558.729801083
+          ],
+          "radius_x_xy": 0.4999766653054394,
+          "radius_y_xy": 0.5000233356840909,
+          "radius_xy": 0.5000000004947651,
+          "area_pixel": 1362.3037064915216,
+          "area_xy": 0.7853981632411039,
+          "bbox_pixel": {
+            "min": [
+              5696.726498103236,
+              5739.954698319256
+            ],
+            "max": [
+              5738.3742945760905,
+              5781.6024947921105
+            ]
+          },
+          "bbox_xy": {
+            "min": [
+              519170.85907583847,
+              3344558.2297777473
+            ],
+            "max": [
+              519171.8590291691,
+              3344559.2298244187
+            ]
+          }
+        }
+      ],
+      "bbox_pixel": {
+        "min": [
+          5696.726498103236,
+          5739.954698319256
+        ],
+        "max": [
+          5738.3742945760905,
+          5781.6024947921105
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519170.85907583847,
+          3344558.2297777473
+        ],
+        "max": [
+          519171.8590291691,
+          3344559.2298244187
+        ]
+      },
+      "area_pixel": 1362.3037064915216,
+      "area_xy": 0.7853981632411039,
+      "count": 1,
+      "equipment_id": "2#daozha_3",
+      "equipment_name": "2#daozha_3",
+      "equipment_group_name": "2#daozha",
+      "equipment_type": "daozha",
+      "batch_primitive_index": 3,
+      "batch_primitive_count": 3
+    }
+  ]
+}
