@@ -76,3 +76,41 @@ def load_aligned_ortho_thumbnail(
         borderMode=cv2.BORDER_CONSTANT,
         borderValue=(255, 255, 255),
     )
+
+
+def draw_route_segments(
+    image: np.ndarray,
+    segment_states: list[list[tuple[int, int, int]]],
+    checkpoints: list[tuple[int, int]],
+    mode: str,
+    output: Path,
+    line_width: int,
+) -> np.ndarray:
+    """Draw a multi-segment route and its ordered checkpoints."""
+    canvas = image.copy()
+    colors = [(0, 0, 230), (0, 140, 255), (220, 80, 40), (180, 40, 180)]
+    for index, states in enumerate(segment_states):
+        if len(states) < 2:
+            continue
+        points = np.asarray(
+            [(col, row) for row, col, _ in states], dtype=np.int32
+        ).reshape((-1, 1, 2))
+        cv2.polylines(
+            canvas, [points], False, colors[index % len(colors)],
+            line_width, cv2.LINE_AA,
+        )
+    for index, (row, col) in enumerate(checkpoints):
+        color = (0, 190, 0) if index == 0 else (255, 90, 0)
+        cv2.circle(canvas, (col, row), 7, color, -1, cv2.LINE_AA)
+        cv2.putText(
+            canvas, str(index), (col + 8, row - 8),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2, cv2.LINE_AA,
+        )
+    cv2.putText(
+        canvas, f"movement mode: {mode}", (24, 34),
+        cv2.FONT_HERSHEY_SIMPLEX, 0.75, (20, 20, 20), 2, cv2.LINE_AA,
+    )
+    output.parent.mkdir(parents=True, exist_ok=True)
+    if not cv2.imwrite(str(output), canvas):
+        raise OSError(f"Failed to save route image: {output}")
+    return canvas

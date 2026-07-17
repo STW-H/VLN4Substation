@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime
-import json
 import math
 from pathlib import Path
 import sys
@@ -23,7 +22,7 @@ from substation_vln.config import load_yaml_config  # noqa: E402
 from substation_vln.paths import CONFIGS_DIR  # noqa: E402
 from substation_vln.planning.astar import path_length_m  # noqa: E402
 from substation_vln.planning.common.grid import GridSpec  # noqa: E402
-from substation_vln.planning.common.io import resolve_project_path, write_json  # noqa: E402
+from substation_vln.planning.common.io import read_json, resolve_project_path, write_json  # noqa: E402
 from substation_vln.planning.common.visualization import load_aligned_ortho_thumbnail  # noqa: E402
 from substation_vln.planning.improved_astar import (  # noqa: E402
     PoseAStarConfig,
@@ -36,10 +35,6 @@ from substation_vln.planning.improved_astar import (  # noqa: E402
 
 
 DEFAULT_CONFIG = CONFIGS_DIR / "tools" / "planning" / "run_region_goal_astar.yaml"
-
-
-def load_json(path: Path):
-    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def choose_equipment(items: list[dict], requested: str | None) -> dict:
@@ -103,6 +98,37 @@ def choose_start_cell(image: np.ndarray, valid_mask: np.ndarray, display: dict) 
             raise SystemExit("Start selection window closed.")
     cv2.destroyWindow(name)
     return selected[0]
+
+
+def resolve_annotated_start(
+    starts: list[dict],
+    requested: str | None,
+    random_start: bool,
+    valid_mask: np.ndarray,
+    grid: GridSpec,
+    random_seed: int | None,
+) -> tuple[tuple[int, int], dict]:
+    candidates: list[tuple[tuple[int, int], dict]] = []
+    for item in starts:
+        col, row = grid.xy_to_grid(np.asarray([item["xy"]], dtype=np.float64))[0]
+        rc = (int(row), int(col))
+        if 0 <= rc[0] < grid.height and 0 <= rc[1] < grid.width and valid_mask[rc] > 0:
+            candidates.append((rc, item))
+    if requested is not None:
+        matches = [
+            pair for pair in candidates
+            if str(pair[1]["start_point_index"]) == requested
+            or pair[1]["start_point_name"] == requested
+        ]
+        if len(matches) != 1:
+            raise SystemExit(f"Annotated start point {requested!r} was not found uniquely or is not collision-free.")
+        return matches[0]
+    if random_start:
+        if not candidates:
+            raise SystemExit("No collision-free annotated robot start point is available.")
+        rng = np.random.default_rng(random_seed)
+        return candidates[int(rng.integers(0, len(candidates)))]
+    raise ValueError("Either requested or random_start must select an annotated start")
 
 
 def path_to_payload(grid: GridSpec, states: list[tuple[int, int, int]], heading_bins: int) -> tuple[list[dict], list[list[float]]]:
@@ -212,9 +238,14 @@ def main() -> int:
     parser.add_argument("--start-x", type=float)
     parser.add_argument("--start-y", type=float)
     parser.add_argument("--start-yaw-deg", type=float)
+    parser.add_argument("--start-point", help="Annotated start-point index or exact name")
+    parser.add_argument("--random-start", action="store_true", help="Randomly choose a collision-free annotated start")
+    parser.add_argument("--random-seed", type=int)
     parser.add_argument("--no-display", action="store_true")
     args = parser.parse_args()
     config = load_yaml_config(args.config)
+    mode_config_path = resolve_project_path(config["movement_mode_config"])
+    mode_config = load_yaml_config(mode_config_path)
     paths = config["paths"]
     planning_map_path = resolve_project_path(paths["planning_map"])
     planning_metadata_path = resolve_project_path(paths["planning_metadata"])
@@ -223,8 +254,8 @@ def main() -> int:
     output_dir = resolve_project_path(paths["output_dir"])
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    planning_metadata = load_json(planning_metadata_path)
-    regions_metadata = load_json(regions_metadata_path)
+    planning_metadata = read_json(planning_metadata_path)
+    regions_metadata = read_json(regions_metadata_path)
     grid = GridSpec.from_dict(planning_metadata["grid"])
     target = choose_equipment(regions_metadata["equipment"], args.equipment)
     equipment_index = int(target["equipment_index"])
@@ -241,7 +272,7 @@ def main() -> int:
     tilt_costs = region_data["goal_tilt_costs"][selected]
     if len(rows) == 0:
         raise SystemExit(f"Equipment {target['equipment_name']} has no camera-feasible goal poses.")
-    planner_config = PoseAStarConfig(**config.get("astar", {}))
+    planner_config = PoseAStarConfig(**mode_config["astar"])
     terminal_costs = (planner_config.tilt_cost_weight * tilt_costs).astype(np.float32)
     maximum_terminal_cost = planner_config.tilt_cost_weight
     map_data = np.load(planning_map_path)
@@ -264,9 +295,28 @@ def main() -> int:
     )
     if (args.start_x is None) != (args.start_y is None):
         raise SystemExit("--start-x and --start-y must be provided together.")
+    if args.start_point and args.random_start:
+        raise SystemExit("--start-point and --random-start are mutually exclusive.")
+    if args.start_x is not None and (args.start_point or args.random_start):
+        raise SystemExit("Explicit coordinates cannot be combined with annotated start selection.")
+    selected_start = None
     if args.start_x is not None:
         col, row = grid.xy_to_grid(np.asarray([[args.start_x, args.start_y]], dtype=np.float64))[0]
         start_rc = (int(row), int(col))
+    elif args.start_point or args.random_start:
+        starts_path = resolve_project_path(paths["robot_start_points"])
+        starts = read_json(starts_path)
+        seed = args.random_seed
+        if seed is None:
+            seed = config.get("start", {}).get("random_seed")
+        start_rc, selected_start = resolve_annotated_start(
+            starts,
+            args.start_point,
+            bool(args.random_start),
+            pose_free[start_heading],
+            grid,
+            None if seed is None else int(seed),
+        )
     else:
         start_rc = choose_start_cell(base_image, pose_free[start_heading], config.get("display", {}))
     start_state = (start_rc[0], start_rc[1], start_heading)
@@ -281,7 +331,20 @@ def main() -> int:
             goal_cost_map[state] = float(terminal_cost)
             candidate_lookup[state] = index
 
-    planning_cost_map = map_data["pose_cost_map"] if "pose_cost_map" in map_data.files else map_data["cost_map"]
+    mode_name = str(mode_config["movement_mode"])
+    cost_key = f"pose_cost_map_{mode_name}"
+    if cost_key not in map_data.files:
+        raise SystemExit(
+            f"规划地图缺少 {cost_key}，请重新运行 build_planning_map.py。"
+        )
+    planning_cost_map = map_data[cost_key]
+    direction_keys = ("preferred_path_direction_x", "preferred_path_direction_y")
+    if any(key not in map_data.files for key in direction_keys):
+        raise SystemExit("规划地图缺少推荐路径方向场，请重新运行 build_planning_map.py。")
+    preferred_path_direction = (
+        map_data[direction_keys[0]],
+        map_data[direction_keys[1]],
+    )
     print("\n[区域目标位姿 A*]")
     print(f"  目标设备：{target['equipment_name']}")
     print(f"  候选终点位姿：{len(goal_cost_map):,}")
@@ -302,11 +365,18 @@ def main() -> int:
         cost_weight=planner_config.cost_weight,
         resolution_m=grid.resolution_m,
         goal_terminal_costs=position_terminal_costs,
+        preferred_path_direction=preferred_path_direction,
+        direction_reward_weight=planner_config.preferred_path_direction_reward,
+        reverse_penalty_weight=planner_config.preferred_path_reverse_penalty,
+        turn_cost_weight=planner_config.path_turn_cost_weight,
+        max_turn_deg=planner_config.max_path_turn_deg,
     )
     if not coarse_path:
         raise SystemExit("二维区域目标 A* 未找到通往目标区域的路径。")
-    corridor_radius_m = float(config.get("hierarchical", {}).get("corridor_radius_m", 2.0))
-    max_corridor_radius_m = float(config.get("hierarchical", {}).get("max_corridor_radius_m", 8.0))
+    corridor_radius_m = float(mode_config["hierarchical"]["corridor_radius_m"])
+    max_corridor_radius_m = float(
+        mode_config["hierarchical"]["max_corridor_radius_m"]
+    )
     result = None
     corridor = None
     corridor_goals = {}
@@ -327,6 +397,7 @@ def main() -> int:
             planner_config,
             search_mask=corridor,
             resolution_m=grid.resolution_m,
+            preferred_path_direction=preferred_path_direction,
         )
         if result.found:
             corridor_radius_m = radius
@@ -357,6 +428,7 @@ def main() -> int:
         "config": str(args.config.expanduser().resolve()),
         "target_equipment": target,
         "start": path[0],
+        "annotated_start": selected_start,
         "goal": {**path[-1], "camera": final_camera},
         "robot": regions_metadata["robot"],
         "camera": regions_metadata["camera"],

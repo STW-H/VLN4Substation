@@ -14,6 +14,7 @@ CATEGORIES = {
     "4": {"key": "preferred_path", "name": "优先路径", "default_label": "preferred_path", "geometry": "directed_polyline"},
     "5": {"key": "narrow_space", "name": "狭窄空间", "default_label": "narrow_space", "geometry": "polygon"},
     "6": {"key": "equipment_region", "name": "巡视设备区域", "default_label": "equipment", "geometry": "polygon"},
+    "7": {"key": "robot_start_point", "name": "机器人起始点", "default_label": "start", "geometry": "point"},
 }
 
 LABEL_COLORS_BGR = [
@@ -23,6 +24,7 @@ LABEL_COLORS_BGR = [
     (60, 210, 60),
     (255, 20, 220),
     (210, 210, 0),
+    (40, 190, 255),
 ]
 
 FONT_CANDIDATES = [
@@ -107,7 +109,9 @@ def make_annotation(
         annotation["path_type"] = category["path_type"]
         annotation["path_type_name"] = category.get("path_type_name", category["path_type"])
 
-    if pending["geometry_type"] == "directed_point":
+    if pending["geometry_type"] == "multi_point":
+        add_multi_point_fields(annotation, pending, pixel_to_world)
+    elif pending["geometry_type"] == "directed_point":
         add_directed_point_fields(annotation, pending, pixel_to_world)
     elif pending["geometry_type"] == "multi_directed_point":
         add_multi_directed_point_fields(annotation, pending, pixel_to_world)
@@ -127,6 +131,29 @@ def make_annotation(
         add_polygon_fields(annotation, pending, pixel_to_world)
 
     return annotation
+
+
+def add_multi_point_fields(annotation: dict, pending: dict, pixel_to_world: np.ndarray) -> None:
+    points_pixel = [list(point) for point in pending["points_pixel"]]
+    points_xy = apply_homogeneous(
+        pixel_to_world,
+        np.asarray(points_pixel, dtype=np.float64),
+    ).tolist()
+    base_name = str(annotation.get("label") or "start")
+    point_names = [
+        base_name if len(points_pixel) == 1 else f"{base_name}_{index}"
+        for index in range(1, len(points_pixel) + 1)
+    ]
+    annotation.update(
+        {
+            "points_pixel": points_pixel,
+            "points_xy": points_xy,
+            "point_names": point_names,
+            "bbox_pixel": bounds(points_pixel),
+            "bbox_xy": bounds(points_xy),
+            "count": len(points_pixel),
+        }
+    )
 
 
 def split_equipment_pending(pending: dict) -> list[dict]:

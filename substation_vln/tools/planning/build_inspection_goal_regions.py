@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime
-import json
 from pathlib import Path
 import sys
 
@@ -21,7 +20,7 @@ if str(SRC_ROOT) not in sys.path:
 from substation_vln.config import load_yaml_config  # noqa: E402
 from substation_vln.paths import CONFIGS_DIR  # noqa: E402
 from substation_vln.planning.common.grid import GridSpec  # noqa: E402
-from substation_vln.planning.common.io import resolve_project_path, write_json  # noqa: E402
+from substation_vln.planning.common.io import read_json, resolve_project_path, write_json  # noqa: E402
 from substation_vln.planning.improved_astar.camera_model import CameraConfig  # noqa: E402
 from substation_vln.planning.improved_astar.equipment_geometry import extract_equipment_geometries  # noqa: E402
 from substation_vln.planning.improved_astar.goal_pose_region import (  # noqa: E402
@@ -36,10 +35,6 @@ from substation_vln.planning.improved_astar.visibility import (  # noqa: E402
 
 
 DEFAULT_CONFIG = CONFIGS_DIR / "tools" / "planning" / "build_inspection_goal_regions.yaml"
-
-
-def load_json(path: Path):
-    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def equipment_geometry_signature(items: list[dict]) -> list[dict]:
@@ -178,10 +173,10 @@ def main() -> int:
     geometry_path = output_dir / outputs["equipment_geometry"]
 
     print("\n[巡视目标区域 1/5] 读取通用规划地图与设备标注")
-    metadata = load_json(planning_metadata_path)
+    metadata = read_json(planning_metadata_path)
     grid = GridSpec.from_dict(metadata["grid"])
     map_data = np.load(planning_map_path)
-    equipment_regions = load_json(equipment_regions_path)
+    equipment_regions = read_json(equipment_regions_path)
     print(f"  巡视设备：{len(equipment_regions)} 台")
     print(f"  规划栅格：{grid.width} × {grid.height}，分辨率 {grid.resolution_m:g} m")
     equipment_index_mask = map_data["equipment_index_mask"]
@@ -199,7 +194,7 @@ def main() -> int:
 
     print("\n[巡视目标区域 2/5] 提取设备三维点云几何")
     if geometry_path.exists() and not args.rebuild_geometry and bool(config.get("geometry", {}).get("reuse_cache", True)):
-        equipment_geometry = load_json(geometry_path)
+        equipment_geometry = read_json(geometry_path)
         cached_signature = equipment_geometry_signature(equipment_geometry)
         current_signature = equipment_geometry_signature(equipment_regions)
         if cached_signature != current_signature:

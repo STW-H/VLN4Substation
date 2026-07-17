@@ -1,6 +1,12 @@
-"""Natural-language inspection task parsing and validation."""
+"""Natural-language route parsing and validation."""
 
-from .instruction_parser import DeepSeekInspectionTaskParser
-from .schema import InspectionPlan, InspectionTask
+from .catalog import build_semantic_catalog, validate_catalog_references
+from .instruction_parser import DeepSeekRouteParser
+from .schema import RoutePlan
 
-__all__ = ["DeepSeekInspectionTaskParser", "InspectionPlan", "InspectionTask"]
+__all__ = [
+    "DeepSeekRouteParser",
+    "RoutePlan",
+    "build_semantic_catalog",
+    "validate_catalog_references",
+]

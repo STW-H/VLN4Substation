@@ -243,6 +243,35 @@ python substation_vln/tools/planning/build_inspection_goal_regions.py
 python substation_vln/tools/planning/run_region_goal_astar.py
 ```
 
+标注菜单中的“机器人起始点”支持一次点击多个点。重新合并并构建地图后，可以指定或随机选择起点：
+
+```bash
+python substation_vln/tools/planning/run_region_goal_astar.py \
+  --equipment 1#duanluqi_1 --start-point gate_1
+
+python substation_vln/tools/planning/run_region_goal_astar.py \
+  --equipment 1#duanluqi_1 --random-start --random-seed 42
+```
+
+使用 DeepSeek V4 Pro 从自然语言解析起点、途经点、目标设备和运动模式，并生成、保存和展示完整路径：
+
+```bash
+# 默认从被Git忽略的 .secrets/deepseek_api_key 读取；也可临时使用：
+export DEEPSEEK_API_KEY='your-api-key'
+python substation_vln/tools/planning/run_natural_language_route.py
+```
+
+输入文字配置在 `configs/tools/planning/run_natural_language_route.yaml` 的 `instruction` 字段。
+
+也可以复用已经解析的任务，避免再次调用 API：
+
+```bash
+python substation_vln/tools/planning/run_natural_language_route.py \
+  --plan-json substation_vln/outputs/220kv_erfeishan/tasks/inspection_plan_<timestamp>.json
+```
+
+三套运动模式参数位于 `configs/tools/planning/modes/`：`normal.yaml`、`fast.yaml` 和 `safe.yaml`。`build_planning_map.py` 根据它们离线生成三套 cost 地图；运行时直接按解析模式读取。硬碰撞约束在三种模式下保持一致。
+
 每个 `tools` 脚本都有对应的默认 YAML 配置，统一放在：
 
 ```text

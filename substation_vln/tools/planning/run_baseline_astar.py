@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime
-import json
 from pathlib import Path
 import sys
 
@@ -22,14 +21,10 @@ from substation_vln.config import load_yaml_config  # noqa: E402
 from substation_vln.paths import CONFIGS_DIR  # noqa: E402
 from substation_vln.planning.astar import AStarConfig, astar_search, path_length_m  # noqa: E402
 from substation_vln.planning.common.grid import GridSpec  # noqa: E402
-from substation_vln.planning.common.io import resolve_project_path, write_json  # noqa: E402
+from substation_vln.planning.common.io import read_json, resolve_project_path, write_json  # noqa: E402
 
 
 DEFAULT_CONFIG = CONFIGS_DIR / "tools" / "planning" / "run_baseline_astar.yaml"
-
-
-def load_json(path: Path):
-    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def normalize_to_uint8(values: np.ndarray, valid_mask: np.ndarray) -> np.ndarray:
@@ -203,12 +198,14 @@ def main() -> int:
     output_dir = resolve_project_path(paths["output_dir"])
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    metadata = load_json(metadata_path)
+    metadata = read_json(metadata_path)
     grid = GridSpec.from_dict(metadata["grid"])
-    patrol_points = load_json(patrol_points_path)
+    patrol_points = read_json(patrol_points_path)
     data = np.load(planning_map_path)
     layers = {name: data[name] for name in data.files if name.endswith("_mask")}
-    cost_map = data["cost_map"]
+    if "cost_map_normal" not in data.files:
+        raise SystemExit("规划地图缺少 cost_map_normal，请重新运行 build_planning_map.py。")
+    cost_map = data["cost_map_normal"]
     free_space_mask = data["free_space_mask"]
     base_image = make_display_image(layers, cost_map)
 

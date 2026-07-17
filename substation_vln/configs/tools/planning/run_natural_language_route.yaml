@@ -1,0 +1,36 @@
+# End-to-end natural-language task parsing and multi-segment route generation.
+
+# Natural-language request used by the route workflow.
+instruction: >-
+  你的起始位置是我标注的第一个位置，请你去巡视1#duanluqi_1设备，天气不好，注意安全。
+
+paths:
+  planning_map: substation_vln/outputs/220kv_erfeishan/planning/maps/planning_map.npz
+  planning_metadata: substation_vln/outputs/220kv_erfeishan/planning/maps/planning_map_metadata.json
+  robot_start_points: substation_vln/outputs/220kv_erfeishan/planning/maps/robot_start_points.json
+  goal_regions: substation_vln/outputs/220kv_erfeishan/planning/inspection_goal_regions/inspection_goal_regions.npz
+  goal_regions_metadata: substation_vln/outputs/220kv_erfeishan/planning/inspection_goal_regions/inspection_goal_regions_metadata.json
+  ortho_image: substation_vln/data/processed/220kv_erfeishan/orthophoto/axis_corrected_pointcloud_ortho_8k.png
+  ortho_metadata: substation_vln/data/processed/220kv_erfeishan/orthophoto/axis_corrected_pointcloud_ortho_8k.json
+  ortho_thumbnail_2k: substation_vln/data/processed/220kv_erfeishan/orthophoto/axis_corrected_pointcloud_ortho_2k.png
+  movement_mode_dir: substation_vln/configs/tools/planning/modes
+  task_semantic_catalog: substation_vln/outputs/220kv_erfeishan/planning/maps/task_semantic_catalog.json
+  output_dir: substation_vln/outputs/220kv_erfeishan/planning/natural_language_route
+
+deepseek:
+  api_key_env: DEEPSEEK_API_KEY
+  api_key_file: .secrets/deepseek_api_key
+  base_url: https://api.deepseek.com
+  model: deepseek-v4-pro
+  timeout_s: 60.0
+
+start:
+  yaw_deg: 0.0
+  random_seed: null
+
+display:
+  window_name: Natural-language inspection route
+  max_window_width: 1400
+  max_window_height: 1000
+  ortho_max_resolution: 2048
+  path_line_width: 3

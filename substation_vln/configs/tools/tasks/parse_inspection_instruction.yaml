@@ -1,8 +1,20 @@
-# DeepSeek is used only for text-to-structured-task parsing.
+# Natural-language route request parsed by DeepSeek.
+instruction: >-
+  请从第一个机器人起点出发，巡视1#duanluqi_1，今天天气不好，注意安全。
+
+# DeepSeek is used only for text-to-structured-route parsing.
 # Set the key in the shell; never write it into this file:
 #   export DEEPSEEK_API_KEY='your-api-key'
 deepseek:
   api_key_env: DEEPSEEK_API_KEY
+  api_key_file: .secrets/deepseek_api_key
   base_url: https://api.deepseek.com
-  model: deepseek-chat
+  # DeepSeek API model identifier; adjust here if the provider uses a different
+  # public identifier for the V4 Pro endpoint.
+  model: deepseek-v4-pro
   timeout_s: 60.0
+
+catalog:
+  robot_start_points: substation_vln/outputs/220kv_erfeishan/planning/maps/robot_start_points.json
+  goal_regions_metadata: substation_vln/outputs/220kv_erfeishan/planning/inspection_goal_regions/inspection_goal_regions_metadata.json
+  semantic_catalog: substation_vln/outputs/220kv_erfeishan/planning/maps/task_semantic_catalog.json

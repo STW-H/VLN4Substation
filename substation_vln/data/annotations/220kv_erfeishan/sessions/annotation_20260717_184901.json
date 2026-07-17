@@ -1,0 +1,216 @@
+{
+  "schema_version": 2,
+  "annotation_kind": "ortho_2d",
+  "image": "/home/he/VLN/substation_vln/data/processed/220kv_erfeishan/orthophoto/axis_corrected_pointcloud_ortho_8k.png",
+  "metadata": "/home/he/VLN/substation_vln/data/processed/220kv_erfeishan/orthophoto/axis_corrected_pointcloud_ortho_8k.json",
+  "saved_at": "2026-07-17T18:50:01",
+  "coordinate_system": "axis_corrected_pointcloud",
+  "pixel_to_world_matrix": [
+    [
+      0.024009753584301494,
+      0.0,
+      519034.08207638183
+    ],
+    [
+      0.0,
+      -0.0240119947711791,
+      3344697.0575866215
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "world_to_pixel_matrix": [
+    [
+      41.64974023947662,
+      0.0,
+      -21617634.693916492
+    ],
+    [
+      -0.0,
+      -41.64585281353929,
+      139292761.36613038
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "image_size": {
+    "width": 8246,
+    "height": 8192
+  },
+  "categories": {
+    "1": {
+      "key": "obstacle",
+      "name": "障碍物",
+      "default_label": "obstacle",
+      "geometry": "polygon"
+    },
+    "2": {
+      "key": "preferred_road",
+      "name": "优先通过区",
+      "default_label": "preferred_road",
+      "geometry": "polygon"
+    },
+    "3": {
+      "key": "planning_boundary",
+      "name": "规划边界",
+      "default_label": "planning_boundary",
+      "geometry": "polygon",
+      "single": true
+    },
+    "4": {
+      "key": "preferred_path",
+      "name": "优先路径",
+      "default_label": "preferred_path",
+      "geometry": "directed_polyline"
+    },
+    "5": {
+      "key": "narrow_space",
+      "name": "狭窄空间",
+      "default_label": "narrow_space",
+      "geometry": "polygon"
+    },
+    "6": {
+      "key": "equipment_region",
+      "name": "巡视设备区域",
+      "default_label": "equipment",
+      "geometry": "polygon"
+    },
+    "7": {
+      "key": "robot_start_point",
+      "name": "机器人起始点",
+      "default_label": "start",
+      "geometry": "point"
+    }
+  },
+  "obstacle_shape_options": {
+    "1": {
+      "key": "polygon",
+      "name": "多边形",
+      "geometry": "polygon"
+    },
+    "2": {
+      "key": "rectangle",
+      "name": "矩形",
+      "geometry": "rectangle"
+    },
+    "3": {
+      "key": "circle",
+      "name": "圆形",
+      "geometry": "circle"
+    }
+  },
+  "preferred_path_options": {
+    "1": {
+      "key": "directed",
+      "name": "有向路径",
+      "geometry": "directed_polyline"
+    },
+    "2": {
+      "key": "undirected",
+      "name": "无向路径",
+      "geometry": "polyline"
+    }
+  },
+  "annotations": [
+    {
+      "id": 1,
+      "category": "robot_start_point",
+      "category_name": "机器人起始点",
+      "label": "suijiqishidian",
+      "selection_type": "image_multi_point",
+      "geometry_type": "multi_point",
+      "color_bgr": [
+        30,
+        30,
+        255
+      ],
+      "points_pixel": [
+        [
+          1125.3334922880017,
+          3846.5304457600005
+        ],
+        [
+          1439.4154894080016,
+          4753.87843744
+        ],
+        [
+          2081.7325612960017,
+          5178.858522432001
+        ],
+        [
+          595.4655304800015,
+          2996.5702757760005
+        ],
+        [
+          6984.164196124993,
+          5207.995978489967
+        ],
+        [
+          6987.388068072249,
+          2214.6308754637234
+        ]
+      ],
+      "points_xy": [
+        [
+          519061.1010562318,
+          3344604.694717671
+        ],
+        [
+          519068.64208758797,
+          3344582.9074824387
+        ],
+        [
+          519084.06396220694,
+          3344572.70286286
+        ],
+        [
+          519048.3790570366,
+          3344625.103956828
+        ],
+        [
+          519201.77013772307,
+          3344572.0032144175
+        ],
+        [
+          519201.8475420941,
+          3344643.87988162
+        ]
+      ],
+      "point_names": [
+        "suijiqishidian_1",
+        "suijiqishidian_2",
+        "suijiqishidian_3",
+        "suijiqishidian_4",
+        "suijiqishidian_5",
+        "suijiqishidian_6"
+      ],
+      "bbox_pixel": {
+        "min": [
+          595.4655304800015,
+          2214.6308754637234
+        ],
+        "max": [
+          6987.388068072249,
+          5207.995978489967
+        ]
+      },
+      "bbox_xy": {
+        "min": [
+          519048.3790570366,
+          3344572.0032144175
+        ],
+        "max": [
+          519201.8475420941,
+          3344643.87988162
+        ]
+      },
+      "count": 6
+    }
+  ]
+}

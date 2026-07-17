@@ -1,0 +1,33 @@
+# Emphasize semantic/obstacle cost and conservative motion; hard constraints are identical.
+movement_mode: safe
+
+cost_map:
+  base_cost: 1.0
+  preferred_road_cost: 0.40
+  preferred_path_sigma_m: 1.0
+  preferred_path_alpha: 0.35
+  narrow_space_penalty: 3.00
+  obstacle_repulsion_radius_m: 2.5
+  obstacle_repulsion_weight: 3.0
+  min_cost: 0.20
+
+hierarchical:
+  corridor_radius_m: 3.0
+  max_corridor_radius_m: 12.0
+
+astar:
+  cost_weight: 1.8
+  heuristic_weight: 1.0
+  rotation_cost_per_bin: 0.50
+  lateral_motion_weight: 0.40
+  preferred_path_direction_reward: 0.40
+  preferred_path_reverse_penalty: 0.70
+  path_turn_cost_weight: 2.00
+  max_path_turn_deg: 89.0
+  tilt_cost_weight: 18.0
+  min_traversal_cost: 0.000001
+  allow_diagonal: true
+
+waypoint:
+  tolerance_m: 0.4
+  terminal_distance_weight: 2.0

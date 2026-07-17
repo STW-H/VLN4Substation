@@ -62,6 +62,7 @@ CATEGORY_COLORS_BGR = {
     "preferred_road": (255, 140, 0),
     "preferred_path": (255, 30, 220),
     "patrol_point": (40, 190, 255),
+    "robot_start_point": (40, 190, 255),
     "narrow_space": (180, 60, 180),
 }
 
@@ -191,6 +192,9 @@ def draw_label(image: np.ndarray, text: str, position: tuple[int, int], color: t
 
 def annotation_label_position(annotation: dict) -> tuple[int, int] | None:
     geometry_type = annotation.get("geometry_type")
+    if geometry_type == "multi_point" and annotation.get("points_pixel"):
+        point = annotation["points_pixel"][0]
+        return int(point[0] + 10), int(point[1] - 10)
     if geometry_type == "multi_polygon":
         points = [point for polygon in annotation.get("polygons_pixel", []) for point in polygon]
         if points:
@@ -225,7 +229,11 @@ def draw_review(image_path: Path, merged_payload: dict, review_path: Path, max_r
         color = CATEGORY_COLORS_BGR.get(category, tuple(annotation.get("color_bgr", [255, 255, 255])))
         geometry_type = annotation.get("geometry_type")
 
-        if geometry_type == "multi_polygon":
+        if geometry_type == "multi_point":
+            for point in annotation.get("points_pixel", []):
+                center = tuple(np.asarray(point, dtype=np.int32))
+                cv2.drawMarker(image, center, color, cv2.MARKER_CROSS, 24, 4, cv2.LINE_AA)
+        elif geometry_type == "multi_polygon":
             for polygon in annotation.get("polygons_pixel", []):
                 points = np.asarray(polygon, dtype=np.int32)
                 if category == "planning_boundary":
@@ -259,6 +267,15 @@ def draw_review(image_path: Path, merged_payload: dict, review_path: Path, max_r
 
     for annotation in merged_payload["annotations"]:
         if annotation.get("category") == "planning_boundary":
+            continue
+        if annotation.get("geometry_type") == "multi_point":
+            color = CATEGORY_COLORS_BGR.get(
+                annotation.get("category"), tuple(annotation.get("color_bgr", [255, 255, 255]))
+            )
+            names = annotation.get("point_names", [])
+            for index, point in enumerate(annotation.get("points_pixel", [])):
+                name = names[index] if index < len(names) else f"{annotation.get('label', 'start')}_{index + 1}"
+                draw_label(image, str(name), (int(point[0] + 10), int(point[1] - 10)), color)
             continue
         position = annotation_label_position(annotation)
         if position is not None:

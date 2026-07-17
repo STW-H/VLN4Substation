@@ -12,6 +12,7 @@ import numpy as np
 
 
 State = tuple[int, int, int]
+DirectionField = tuple[np.ndarray, np.ndarray]
 
 
 @dataclass(frozen=True)
@@ -23,6 +24,20 @@ class PoseAStarConfig:
     tilt_cost_weight: float = 1.0
     min_traversal_cost: float = 1.0e-6
     allow_diagonal: bool = True
+    preferred_path_direction_reward: float = 0.0
+    preferred_path_reverse_penalty: float = 0.0
+    path_turn_cost_weight: float = 0.0
+    max_path_turn_deg: float = 180.0
+
+    def __post_init__(self) -> None:
+        if not 0.0 <= self.max_path_turn_deg <= 180.0:
+            raise ValueError("max_path_turn_deg must be in [0, 180]")
+        if self.path_turn_cost_weight < 0.0:
+            raise ValueError("path_turn_cost_weight cannot be negative")
+        if self.preferred_path_direction_reward < 0.0:
+            raise ValueError("preferred_path_direction_reward cannot be negative")
+        if self.preferred_path_reverse_penalty < 0.0:
+            raise ValueError("preferred_path_reverse_penalty cannot be negative")
 
 
 @dataclass(frozen=True)
@@ -37,6 +52,14 @@ class PoseAStarResult:
     def found(self) -> bool:
         return bool(self.path_states)
 
+
+@dataclass(frozen=True)
+class HierarchicalPoseAStarResult:
+    pose_result: PoseAStarResult
+    coarse_path_rc: list[tuple[int, int]]
+    corridor_mask: np.ndarray
+    used_corridor_radius_m: float
+
 def region_astar_path(
     traversable_mask: np.ndarray,
     cost_map: np.ndarray,
@@ -46,28 +69,43 @@ def region_astar_path(
     cost_weight: float = 1.0,
     resolution_m: float = 1.0,
     goal_terminal_costs: dict[tuple[int, int], float] | None = None,
+    preferred_path_direction: DirectionField | None = None,
+    direction_reward_weight: float = 0.0,
+    reverse_penalty_weight: float = 0.0,
+    turn_cost_weight: float = 0.0,
+    max_turn_deg: float = 180.0,
 ) -> list[tuple[int, int]]:
     """Fast two-dimensional region-goal A* used to construct a refinement corridor."""
+    if not 0.0 <= max_turn_deg <= 180.0:
+        raise ValueError("max_turn_deg must be in [0, 180]")
     height, width = traversable_mask.shape
     goals = set(goal_positions)
     if not goals:
         return []
-    start = (int(start_rc[0]), int(start_rc[1]))
-    if traversable_mask[start] == 0:
-        raise ValueError(f"Start position is not traversable: {start}")
+    start_position = (int(start_rc[0]), int(start_rc[1]))
+    if traversable_mask[start_position] == 0:
+        raise ValueError(f"Start position is not traversable: {start_position}")
     goal_mask = np.zeros((height, width), dtype=np.uint8)
     for row, col in goals:
         goal_mask[row, col] = 1
     distance = cv2.distanceTransform((goal_mask == 0).astype(np.uint8), cv2.DIST_L2, 5)
     finite_costs = cost_map[np.isfinite(cost_map) & (traversable_mask > 0)]
     min_map_cost = float(finite_costs.min()) if len(finite_costs) else 0.0
-    lower_step_cost = float(resolution_m) * (1.0 + cost_weight * max(min_map_cost, 0.0))
+    lower_step_cost = float(resolution_m) * max(
+        1.0 + cost_weight * max(min_map_cost, 0.0) - direction_reward_weight,
+        1.0e-6,
+    )
     offsets = [
         (-1, 0, 1.0), (1, 0, 1.0), (0, -1, 1.0), (0, 1, 1.0),
         (-1, -1, math.sqrt(2.0)), (-1, 1, math.sqrt(2.0)),
         (1, -1, math.sqrt(2.0)), (1, 1, math.sqrt(2.0)),
     ]
-    heap: list[tuple[float, int, tuple[int, int]]] = [(float(distance[start]) * lower_step_cost, 0, start)]
+    motion_lookup = {(dr, dc): index for index, (dr, dc, _) in enumerate(offsets)}
+    turn_angles = _motion_turn_angles(offsets)
+    start = start_position
+    heap: list[tuple[float, int, tuple[int, int]]] = [
+        (float(distance[start_position]) * lower_step_cost, 0, start)
+    ]
     g_score = {start: 0.0}
     came_from: dict[tuple[int, int], tuple[int, int]] = {}
     closed: set[tuple[int, int]] = set()
@@ -88,14 +126,43 @@ def region_astar_path(
                 best_total = total
         closed.add(current)
         row, col = current
-        for dr, dc, step in offsets:
+        previous_motion = _incoming_motion_index_2d(
+            current, came_from, motion_lookup
+        )
+        for motion_index, (dr, dc, step) in enumerate(offsets):
+            turn_angle = (
+                0.0 if previous_motion < 0
+                else float(turn_angles[previous_motion, motion_index])
+            )
+            if turn_angle > math.radians(max_turn_deg) + 1.0e-9:
+                continue
             nr, nc = row + dr, col + dc
             if nr < 0 or nr >= height or nc < 0 or nc >= width or traversable_mask[nr, nc] == 0:
                 continue
             if dr and dc and (traversable_mask[row + dr, col] == 0 or traversable_mask[row, col + dc] == 0):
                 continue
             traversal = max(float(cost_map[nr, nc]), 0.0)
-            tentative = g_score[current] + step * float(resolution_m) * (1.0 + cost_weight * traversal)
+            direction_cost = _preferred_path_direction_cost(
+                preferred_path_direction,
+                nr,
+                nc,
+                dr,
+                dc,
+                direction_reward_weight,
+                reverse_penalty_weight,
+            )
+            step_factor = max(
+                1.0
+                + cost_weight * traversal
+                + direction_cost,
+                1.0e-6,
+            )
+            turn_cost = float(turn_cost_weight) * (1.0 - math.cos(turn_angle))
+            tentative = (
+                g_score[current]
+                + step * float(resolution_m) * step_factor
+                + turn_cost
+            )
             neighbor = (nr, nc)
             if tentative >= g_score.get(neighbor, math.inf):
                 continue
@@ -128,7 +195,9 @@ def path_corridor_mask(shape: tuple[int, int], path_rc: list[tuple[int, int]], r
     return mask
 
 
-def _reconstruct(came_from: dict[State, State], state: State) -> list[State]:
+def _reconstruct(
+    came_from: dict[State, State], state: State
+) -> list[State]:
     path = [state]
     while state in came_from:
         state = came_from[state]
@@ -146,6 +215,72 @@ def _goal_distance_cells(shape: tuple[int, int], goals: Iterable[State]) -> np.n
     return cv2.distanceTransform((goal_mask == 0).astype(np.uint8), cv2.DIST_L2, 5).astype(np.float32)
 
 
+def _preferred_path_direction_cost(
+    direction_field: DirectionField | None,
+    row: int,
+    col: int,
+    dr: int,
+    dc: int,
+    reward_weight: float,
+    reverse_penalty_weight: float,
+) -> float:
+    """Return reverse penalty minus forward reward on a directed path."""
+    if direction_field is None or (
+        reward_weight <= 0.0 and reverse_penalty_weight <= 0.0
+    ):
+        return 0.0
+    step = math.hypot(float(dr), float(dc))
+    if step <= 0.0:
+        return 0.0
+    move_x = float(dc) / step
+    move_y = float(-dr) / step
+    direction_x, direction_y = direction_field
+    alignment = (
+        move_x * float(direction_x[row, col])
+        + move_y * float(direction_y[row, col])
+    )
+    forward_reward = float(reward_weight) * max(0.0, alignment)
+    reverse_penalty = float(reverse_penalty_weight) * max(0.0, -alignment)
+    return reverse_penalty - forward_reward
+
+
+def _motion_turn_angles(
+    motions: list[tuple[int, int, float]],
+) -> np.ndarray:
+    vectors = np.asarray([(dr, dc) for dr, dc, _ in motions], dtype=np.float64)
+    vectors /= np.linalg.norm(vectors, axis=1, keepdims=True)
+    cosine = np.clip(vectors @ vectors.T, -1.0, 1.0)
+    return np.arccos(cosine)
+
+
+def _incoming_motion_index(
+    state: State,
+    came_from: dict[State, State],
+    motion_lookup: dict[tuple[int, int], int],
+) -> int:
+    """Find the last translation before this state, skipping in-place rotations."""
+    current = state
+    while current in came_from:
+        previous = came_from[current]
+        delta = (current[0] - previous[0], current[1] - previous[1])
+        if delta != (0, 0):
+            return motion_lookup.get(delta, -1)
+        current = previous
+    return -1
+
+
+def _incoming_motion_index_2d(
+    state: tuple[int, int],
+    came_from: dict[tuple[int, int], tuple[int, int]],
+    motion_lookup: dict[tuple[int, int], int],
+) -> int:
+    if state not in came_from:
+        return -1
+    previous = came_from[state]
+    delta = (state[0] - previous[0], state[1] - previous[1])
+    return motion_lookup.get(delta, -1)
+
+
 def pose_region_astar_search(
     pose_free_masks: np.ndarray,
     cost_map: np.ndarray,
@@ -154,6 +289,7 @@ def pose_region_astar_search(
     config: PoseAStarConfig,
     search_mask: np.ndarray | None = None,
     resolution_m: float = 1.0,
+    preferred_path_direction: DirectionField | None = None,
 ) -> PoseAStarResult:
     bins, height, width = pose_free_masks.shape
     start_row, start_col, start_heading = start_state
@@ -171,6 +307,10 @@ def pose_region_astar_search(
     if config.allow_diagonal:
         diagonal = math.sqrt(2.0)
         translations += [(-1, -1, diagonal), (-1, 1, diagonal), (1, -1, diagonal), (1, 1, diagonal)]
+    motion_lookup = {
+        (dr, dc): index for index, (dr, dc, _) in enumerate(translations)
+    }
+    turn_angles = _motion_turn_angles(translations)
 
     g_score: dict[State, float] = {start_state: 0.0}
     came_from: dict[State, State] = {}
@@ -179,7 +319,12 @@ def pose_region_astar_search(
     counter = 0
     finite_costs = cost_map[np.isfinite(cost_map)]
     min_map_cost = float(finite_costs.min()) if len(finite_costs) else 0.0
-    heuristic_scale = float(resolution_m) * (1.0 + config.cost_weight * max(min_map_cost, 0.0))
+    heuristic_scale = float(resolution_m) * max(
+        1.0
+        + config.cost_weight * max(min_map_cost, 0.0)
+        - config.preferred_path_direction_reward,
+        1.0e-6,
+    )
     start_h = float(goal_distance[start_row, start_col]) * heuristic_scale
     heapq.heappush(heap, (config.heuristic_weight * start_h, counter, start_state))
     expanded = 0
@@ -206,6 +351,9 @@ def pose_region_astar_search(
         closed.add(current)
         expanded += 1
         row, col, heading = current
+        previous_motion = _incoming_motion_index(
+            current, came_from, motion_lookup
+        )
 
         for next_heading in ((heading - 1) % bins, (heading + 1) % bins):
             if pose_free_masks[next_heading, row, col] == 0:
@@ -221,7 +369,13 @@ def pose_region_astar_search(
             heapq.heappush(heap, (tentative + config.heuristic_weight * h, counter, neighbor))
 
         yaw = heading * (2.0 * math.pi / bins)
-        for dr, dc, step in translations:
+        for motion_index, (dr, dc, step) in enumerate(translations):
+            turn_angle = (
+                0.0 if previous_motion < 0
+                else float(turn_angles[previous_motion, motion_index])
+            )
+            if turn_angle > math.radians(config.max_path_turn_deg) + 1.0e-9:
+                continue
             nr, nc = row + dr, col + dc
             if nr < 0 or nr >= height or nc < 0 or nc >= width:
                 continue
@@ -236,7 +390,30 @@ def pose_region_astar_search(
             alignment = abs(math.cos(movement_yaw - yaw))
             lateral_penalty = config.lateral_motion_weight * (1.0 - alignment)
             traversal = max(float(cost_map[nr, nc]), config.min_traversal_cost)
-            tentative = current_g + step * float(resolution_m) * (1.0 + config.cost_weight * traversal + lateral_penalty)
+            direction_cost = _preferred_path_direction_cost(
+                preferred_path_direction,
+                nr,
+                nc,
+                dr,
+                dc,
+                config.preferred_path_direction_reward,
+                config.preferred_path_reverse_penalty,
+            )
+            step_factor = max(
+                1.0
+                + config.cost_weight * traversal
+                + lateral_penalty
+                + direction_cost,
+                1.0e-6,
+            )
+            turn_cost = config.path_turn_cost_weight * (
+                1.0 - math.cos(turn_angle)
+            )
+            tentative = (
+                current_g
+                + step * float(resolution_m) * step_factor
+                + turn_cost
+            )
             neighbor = (nr, nc, heading)
             if tentative >= g_score.get(neighbor, math.inf):
                 continue
@@ -254,4 +431,79 @@ def pose_region_astar_search(
         path_cost=float(g_score[best_goal]),
         terminal_goal_cost=float(best_terminal),
         expanded_nodes=expanded,
+    )
+
+
+def hierarchical_pose_region_astar(
+    pose_free_masks: np.ndarray,
+    cost_map: np.ndarray,
+    start_state: State,
+    goal_terminal_costs: dict[State, float],
+    config: PoseAStarConfig,
+    *,
+    resolution_m: float,
+    corridor_radius_m: float,
+    max_corridor_radius_m: float,
+    preferred_path_direction: DirectionField | None = None,
+) -> HierarchicalPoseAStarResult:
+    """Plan a coarse region path, then refine position and heading in an expanding corridor."""
+    if corridor_radius_m <= 0 or max_corridor_radius_m < corridor_radius_m:
+        raise ValueError("Invalid hierarchical corridor radius range")
+    position_free = np.any(np.asarray(pose_free_masks) > 0, axis=0).astype(np.uint8)
+    position_terminal_costs: dict[tuple[int, int], float] = {}
+    for state, terminal_cost in goal_terminal_costs.items():
+        position = (state[0], state[1])
+        position_terminal_costs[position] = min(
+            position_terminal_costs.get(position, math.inf), float(terminal_cost)
+        )
+    coarse_path = region_astar_path(
+        position_free,
+        cost_map,
+        (start_state[0], start_state[1]),
+        position_terminal_costs,
+        cost_weight=config.cost_weight,
+        resolution_m=resolution_m,
+        goal_terminal_costs=position_terminal_costs,
+        preferred_path_direction=preferred_path_direction,
+        direction_reward_weight=config.preferred_path_direction_reward,
+        reverse_penalty_weight=config.preferred_path_reverse_penalty,
+        turn_cost_weight=config.path_turn_cost_weight,
+        max_turn_deg=config.max_path_turn_deg,
+    )
+    empty_corridor = np.zeros(position_free.shape, dtype=np.uint8)
+    if not coarse_path:
+        return HierarchicalPoseAStarResult(
+            PoseAStarResult([], math.inf, math.inf, math.inf, 0),
+            [], empty_corridor, float(corridor_radius_m),
+        )
+
+    radius = float(corridor_radius_m)
+    last_result = PoseAStarResult([], math.inf, math.inf, math.inf, 0)
+    last_corridor = empty_corridor
+    while radius <= float(max_corridor_radius_m) + 1.0e-9:
+        last_corridor = path_corridor_mask(
+            position_free.shape,
+            coarse_path,
+            max(1, int(round(radius / resolution_m))),
+        )
+        corridor_goals = {
+            state: cost
+            for state, cost in goal_terminal_costs.items()
+            if last_corridor[state[0], state[1]] > 0
+        }
+        last_result = pose_region_astar_search(
+            pose_free_masks,
+            cost_map,
+            start_state,
+            corridor_goals,
+            config,
+            search_mask=last_corridor,
+            resolution_m=resolution_m,
+            preferred_path_direction=preferred_path_direction,
+        )
+        if last_result.found:
+            return HierarchicalPoseAStarResult(last_result, coarse_path, last_corridor, radius)
+        radius *= 2.0
+    return HierarchicalPoseAStarResult(
+        last_result, coarse_path, last_corridor, min(radius / 2.0, float(max_corridor_radius_m))
     )

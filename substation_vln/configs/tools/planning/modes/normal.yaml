@@ -1,0 +1,33 @@
+# Balanced route quality, semantic preference, and search effort.
+movement_mode: normal
+
+cost_map:
+  base_cost: 1.0
+  preferred_road_cost: 0.60
+  preferred_path_sigma_m: 1.5
+  preferred_path_alpha: 0.30
+  narrow_space_penalty: 1.50
+  obstacle_repulsion_radius_m: 1.5
+  obstacle_repulsion_weight: 2.0
+  min_cost: 0.20
+
+hierarchical:
+  corridor_radius_m: 2.0
+  max_corridor_radius_m: 8.0
+
+astar:
+  cost_weight: 1.0
+  heuristic_weight: 1.0
+  rotation_cost_per_bin: 0.35
+  lateral_motion_weight: 0.25
+  preferred_path_direction_reward: 0.25
+  preferred_path_reverse_penalty: 0.35
+  path_turn_cost_weight: 1.00
+  max_path_turn_deg: 89.0
+  tilt_cost_weight: 15.0
+  min_traversal_cost: 0.000001
+  allow_diagonal: true
+
+waypoint:
+  tolerance_m: 0.5
+  terminal_distance_weight: 1.0

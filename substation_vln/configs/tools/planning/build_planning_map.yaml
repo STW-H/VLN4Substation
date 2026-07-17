@@ -3,27 +3,23 @@
 paths:
   annotation: substation_vln/data/annotations/220kv_erfeishan/annotations_merged.json
   output_dir: substation_vln/outputs/220kv_erfeishan/planning/maps
+  movement_mode_dir: substation_vln/configs/tools/planning/modes
+
+movement_modes: [normal, fast, safe]
 
 base_map:
   resolution_m: 0.05
   bounds_padding_m: 1.0
   preferred_path_width_m: 0.5
 
-derived_map:
+collision:
   obstacle_inflation_radius_m: 0.4
-  preferred_path_sigma_m: 1.5
-  obstacle_repulsion_radius_m: 1.5
-  obstacle_repulsion_weight: 2.0
-  base_cost: 1.0
-  preferred_road_cost: 0.6
-  preferred_path_alpha: 0.3
-  narrow_space_penalty: 1.5
-  min_cost: 0.2
 
 outputs:
   npz: planning_map.npz
   metadata: planning_map_metadata.json
   patrol_points: patrol_points.json
+  robot_start_points: robot_start_points.json
   equipment_regions: equipment_regions.json
   boundary_mask_png: boundary_mask.png
   obstacle_mask_png: obstacle_mask.png
@@ -31,8 +27,6 @@ outputs:
   free_space_mask_png: free_space_mask.png
   preferred_road_mask_png: preferred_road_mask.png
   preferred_path_mask_png: preferred_path_mask.png
+  directed_preferred_path_mask_png: directed_preferred_path_mask.png
   narrow_space_mask_png: narrow_space_mask.png
   equipment_mask_png: equipment_mask.png
-  cost_map_png: cost_map.png
-  pose_cost_map_png: pose_cost_map.png
-  planning_overlay_png: planning_overlay.png

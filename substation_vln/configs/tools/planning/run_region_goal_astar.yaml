@@ -1,5 +1,8 @@
 # Region-goal pose-aware A* configuration.
 
+# Standalone tests use the same parameters as natural-language normal mode.
+movement_mode_config: substation_vln/configs/tools/planning/modes/normal.yaml
+
 paths:
   planning_map: substation_vln/outputs/220kv_erfeishan/planning/maps/planning_map.npz
   planning_metadata: substation_vln/outputs/220kv_erfeishan/planning/maps/planning_map_metadata.json
@@ -8,24 +11,12 @@ paths:
   ortho_thumbnail_2k: substation_vln/data/processed/220kv_erfeishan/orthophoto/axis_corrected_pointcloud_ortho_2k.png
   goal_regions: substation_vln/outputs/220kv_erfeishan/planning/inspection_goal_regions/inspection_goal_regions.npz
   goal_regions_metadata: substation_vln/outputs/220kv_erfeishan/planning/inspection_goal_regions/inspection_goal_regions_metadata.json
+  robot_start_points: substation_vln/outputs/220kv_erfeishan/planning/maps/robot_start_points.json
   output_dir: substation_vln/outputs/220kv_erfeishan/planning/region_goal_astar
 
 start:
   yaw_deg: 0.0
-
-hierarchical:
-  corridor_radius_m: 2.0
-  max_corridor_radius_m: 8.0
-
-astar:
-  cost_weight: 1.0
-  heuristic_weight: 1.0
-  rotation_cost_per_bin: 0.35
-  lateral_motion_weight: 0.25
-  # Metre-equivalent terminal penalty; per-device tilt limits come from region metadata.
-  tilt_cost_weight: 15.0
-  min_traversal_cost: 0.000001
-  allow_diagonal: true
+  random_seed: null
 
 display:
   window_name: Region-goal A* start pose

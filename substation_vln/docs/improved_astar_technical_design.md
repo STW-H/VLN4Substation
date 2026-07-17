@@ -112,7 +112,7 @@ M_{inflated}(p)=\mathbf{1}\left[D_{obs}(p)\le r_{inflate}\right].
 
 当前 `r_inflate=0.4 m`。该空间只服务于普通二维 A* 对照算法。
 
-### 3.3 语义代价图
+### 3.3 三模式离线语义代价图
 
 优先路径吸引场为：
 
@@ -127,6 +127,18 @@ R_{obs}(p)=w_o
 \left[\max\left(\frac{r_o-D_{obs}(p)}{r_o},0\right)\right]^2.
 \]
 
+对于标注为有向的推荐路径，地图同时保存由折线各局部线段生成的单位切线场
+\(\mathbf{t}_{path}(p)\)。从当前栅格向下一栅格移动时，根据世界坐标运动方向
+\(\mathbf{v}\) 给予顺向奖励和逆向惩罚：
+
+\[
+C_{dir}(p,\mathbf{v})=
+w_r\max(0,-\mathbf{v}\cdot\mathbf{t}_{path}(p))
+-w_d\max(0,\mathbf{v}\cdot\mathbf{t}_{path}(p)).
+\]
+
+顺箭头方向获得奖励，逆向行驶增加惩罚，垂直方向的方向项为零。无向推荐路径的方向向量为零，因此只保留位置吸引。该方向项同时用于二维粗规划与矩形位姿精规划，避免粗规划走廊先选中逆向路线。
+
 自由栅格的综合语义代价可写为：
 
 \[
@@ -134,9 +146,9 @@ C(p)=C_{base/road}(p)-\alpha A_{path}(p)
 +P_{narrow}(p)+R_{obs}(p).
 \]
 
-其中优先通过区使用较低基础代价，狭窄空间增加惩罚。最终代价不小于 `min_cost`。
+其中优先通过区使用较低基础代价，狭窄空间增加惩罚。最终代价不小于 `min_cost`。`normal`、`fast`、`safe` 分别从对应模式 YAML 读取上述参数，并在构建规划地图时离线生成三套代价图。
 
-改进式 A* 使用 `pose_cost_map`。该图不使用 baseline 的圆形硬膨胀带，因为机器狗矩形足迹将在每个航向下单独检查；但它仍保留障碍物距离软惩罚，使路径主动远离障碍物。
+每种模式同时生成 `cost_map_<mode>` 和 `pose_cost_map_<mode>`。前者供普通二维 A* 使用，后者不使用 baseline 的圆形硬膨胀带，因为机器狗矩形足迹将在每个航向下单独检查。运行时只按解析模式读取对应数组，不再重新组合整张代价图。
 
 ## 4. 独立设备三维几何
 
@@ -343,7 +355,8 @@ pose_free_packed
 从状态 `s` 平移到 `s'` 的代价为：
 
 \[
-g_{move}=lq\left[1+w_cC(p')+w_l(1-|\cos(\beta-\psi)|)\right],
+g_{move}=lq\left[1+w_cC(p')+w_l(1-|\cos(\beta-\psi)|)+C_{dir}\right]
++w_{turn}(1-\cos\Delta\beta),
 \]
 
 其中：
@@ -354,8 +367,11 @@ g_{move}=lq\left[1+w_cC(p')+w_l(1-|\cos(\beta-\psi)|)\right],
 - `β` 为运动方向；
 - `ψ` 为机身航向；
 - `w_l` 为横向运动权重。
+- `Δβ` 为前后两段平移方向的夹角。
 
 当运动方向与机身纵轴平行或反平行时，横向惩罚为零；纯侧向运动时惩罚最大。
+
+转角项连续增长：直行为零，45°为约 `0.293w_turn`，90°为 `w_turn`，135°为约 `1.707w_turn`，掉头为 `2w_turn`。三个模式还设置 `max_path_turn_deg=89°`；在当前8邻域动作空间中，这意味着连续平移方向只能保持不变或变化45°，不能直接出现90°、135°或掉头。路径以多段45°渐变近似圆弧。
 
 ### 8.3 旋转代价
 
@@ -436,7 +452,7 @@ M_{corridor}=dilate(path,R/q).
 configs/tools/planning/build_planning_map.yaml
 ```
 
-控制栅格分辨率、障碍膨胀、障碍物排斥、道路代价、优先路径吸引和狭窄空间惩罚。
+控制栅格分辨率、障碍硬膨胀以及需要离线构建的模式列表。该文件不再定义任何软 cost。
 
 ### 10.2 目标区域配置
 
@@ -449,10 +465,10 @@ configs/tools/planning/build_inspection_goal_regions.yaml
 ### 10.3 搜索配置
 
 ```text
-configs/tools/planning/run_region_goal_astar.yaml
+configs/tools/planning/modes/{normal,fast,safe}.yaml
 ```
 
-控制初始航向、走廊半径、路径代价权重、旋转代价、横向移动代价和终点俯仰代价。
+分别控制道路 cost、优先路径吸引、狭窄区域惩罚、障碍物软排斥、走廊半径、路径代价权重、旋转代价、横向移动代价、连续转角代价、最大转角和终点俯仰代价。`run_region_goal_astar.yaml` 默认引用 `normal.yaml`，不重复定义参数。
 
 目标区域复核图与搜索必须使用相同的 `tilt_cost_weight`，否则颜色表达的偏好与实际终点选择不一致。
 
@@ -498,3 +514,44 @@ python substation_vln/tools/planning/run_region_goal_astar.py \
 - 到达设备邻域后局部 VLN 的运动步数和拍摄成功率。
 
 消融实验可分别移除目标区域、机身航向、障碍物软排斥、推荐俯仰代价、点云遮挡和分层走廊，以说明各设计对安全性、效率和拍摄初始条件的贡献。
+
+## 13. 自然语言路线编排与运动模式
+
+`run_natural_language_route.py` 将标注地图目录与用户指令一起提交给 DeepSeek，要求返回严格 JSON：
+
+```text
+start_point
+intermediate_points[]
+target_point
+movement_mode
+movement_mode_reason
+```
+
+设备名称只能来自目标区域元数据，起点和途经点只能来自 `robot_start_points.json`。规划按照以下顺序逐段执行本章定义的区域目标位姿 A*：
+
+用户指令默认配置在 `run_natural_language_route.yaml`。提交给模型的 `task_semantic_catalog.json` 只包含起点和设备的标注类别、索引、规范名称及设备类型，不包含工程坐标、地图、可行位姿或代价。模型返回后，本地程序消除大小写、全角字符和常见分隔符差异，并将数字索引转换为规范名称；坐标查询与规划完全留在本地完成。
+
+```text
+指定或随机起点
+  -> 命名途经点1 -> ... -> 命名途经点N
+  -> 设备可行目标位姿区域
+```
+
+途经点不是要求精确踩中一个栅格，而是在模式 YAML 指定的容差半径内构造零到低终点代价的位姿集合。设备段继续使用相机俯仰软代价。
+
+三套配置位于 `configs/tools/planning/modes/`。三种模式共享同一规划边界、矩形碰撞、设备禁入和点云可见性硬约束：
+
+- `normal.yaml`：平衡搜索效率、语义代价和终点观测质量；
+- `fast.yaml`：使用加权启发式并降低软代价权重，优先快速生成较短路线；
+- `safe.yaml`：降低道路 cost、增强优先路径吸引、提高狭窄区域惩罚，并使用 `2.5 m` 障碍邻近软排斥、禁用位姿层对角移动和扩大细化走廊。
+
+三个模式通过 `preferred_path_direction_reward` 和 `preferred_path_reverse_penalty` 分别控制顺向奖励和逆向惩罚。当前 `fast/normal/safe` 的奖励依次为 `0.10/0.25/0.40`，逆向惩罚依次为 `0.10/0.35/0.70`。
+
+完整执行示例：
+
+```bash
+export DEEPSEEK_API_KEY='your-api-key'
+python substation_vln/tools/planning/run_natural_language_route.py
+```
+
+输出 JSON 保存解析任务、实际随机/指定起点、每段路径、设备终点云台姿态、总代价和展开节点数；PNG 在 2K 正射底图上用不同颜色绘制各段路线。

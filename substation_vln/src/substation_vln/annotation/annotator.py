@@ -106,6 +106,7 @@ class OrthoImageAnnotator:
         self.closed_directed_points: list[dict] = []
         self.closed_polylines: list[list[list[float]]] = []
         self.closed_circles: list[dict] = []
+        self.selected_points: list[list[float]] = []
         self.shape_points: list[list[float]] = []
         self.patrol_points: list[list[float]] = []
         self.text_font = self.load_text_font()
@@ -309,6 +310,15 @@ class OrthoImageAnnotator:
             self.close_current_polyline()
             return
 
+        if event == cv2.EVENT_LBUTTONDOWN and geometry == "point":
+            point = list(self.screen_to_image(x, y))
+            self.selected_points.append(point)
+            print(
+                f"Added robot start point #{len(self.selected_points)}. "
+                "Press Enter to finish, or keep adding points."
+            )
+            return
+
         if event == cv2.EVENT_LBUTTONDOWN and geometry == "directed_point":
             point = list(self.screen_to_image(x, y))
             self.patrol_points.append(point)
@@ -424,6 +434,17 @@ class OrthoImageAnnotator:
         }
         self.closed_circles = []
 
+    def finish_current_points(self) -> None:
+        if not self.selected_points:
+            print("No robot start point in current annotation.")
+            return
+        self.pending_annotation = {
+            "selection_type": "image_multi_point",
+            "geometry_type": "multi_point",
+            "points_pixel": [list(point) for point in self.selected_points],
+        }
+        self.selected_points = []
+
     def close_current_polyline(self) -> None:
         if len(self.road_vertices) < 2:
             print("Path needs at least 2 waypoints.")
@@ -484,7 +505,15 @@ class OrthoImageAnnotator:
             if annotation.get("category") == "planning_boundary":
                 continue
             color = tuple(annotation["color_bgr"])
-            if annotation["geometry_type"] == "directed_point":
+            if annotation["geometry_type"] == "multi_point":
+                for point in annotation["points_pixel"]:
+                    center = self.image_to_screen(*point)
+                    cv2.drawMarker(
+                        view, center, color, cv2.MARKER_CROSS,
+                        max(12, int(self.args.line_width * 7)),
+                        max(2, int(self.args.line_width)), cv2.LINE_AA,
+                    )
+            elif annotation["geometry_type"] == "directed_point":
                 stop = self.image_to_screen(*annotation["stop_pixel"])
                 look = self.image_to_screen(*annotation["look_pixel"])
                 cv2.arrowedLine(view, stop, look, color, thickness=max(2, int(self.args.line_width)), tipLength=0.25)
@@ -538,6 +567,14 @@ class OrthoImageAnnotator:
         for circle in self.closed_circles:
             self.draw_circle(view, circle["center_pixel"], circle["radius_pixel"], (0, 255, 255), fill_alpha=0.10)
 
+        for point in self.selected_points:
+            center = self.image_to_screen(*point)
+            cv2.drawMarker(
+                view, center, (0, 255, 255), cv2.MARKER_CROSS,
+                max(12, int(self.args.line_width * 7)),
+                max(2, int(self.args.line_width)), cv2.LINE_AA,
+            )
+
         for item in self.closed_directed_points:
             stop = self.image_to_screen(*item["stop_pixel"])
             look = self.image_to_screen(*item["look_pixel"])
@@ -588,7 +625,9 @@ class OrthoImageAnnotator:
         self.draw_scale_bars(view)
 
         category_name = self.active_category["key"] if self.active_category else "none"
-        if self.active_category and self.active_category["geometry"] == "directed_point":
+        if self.active_category and self.active_category["geometry"] == "point":
+            tool_hint = "Left: start point | Enter: finish | W/A/S/D: pan"
+        elif self.active_category and self.active_category["geometry"] == "directed_point":
             tool_hint = "Left: stop+direction | Enter: finish | W/A/S/D: pan"
         elif self.active_category and self.active_category["geometry"] == "directed_polyline":
             tool_hint = "Left: waypoint | Right-click: close path | Enter: finish | W/A/S/D: pan"
@@ -636,7 +675,15 @@ class OrthoImageAnnotator:
         if pending is None:
             return
         color = (0, 255, 255)
-        if pending["geometry_type"] == "directed_point":
+        if pending["geometry_type"] == "multi_point":
+            for point in pending["points_pixel"]:
+                center = self.image_to_screen(*point)
+                cv2.drawMarker(
+                    view, center, color, cv2.MARKER_CROSS,
+                    max(12, int(self.args.line_width * 7)),
+                    max(2, int(self.args.line_width)), cv2.LINE_AA,
+                )
+        elif pending["geometry_type"] == "directed_point":
             stop = self.image_to_screen(*pending["stop_pixel"])
             look = self.image_to_screen(*pending["look_pixel"])
             cv2.arrowedLine(view, stop, look, color, thickness=max(2, int(self.args.line_width)), tipLength=0.25)
@@ -729,6 +776,13 @@ class OrthoImageAnnotator:
                 continue
             label = str(annotation.get("label", ""))
             if not label:
+                continue
+            if annotation["geometry_type"] == "multi_point":
+                names = annotation.get("point_names", [])
+                for index, point in enumerate(annotation["points_pixel"]):
+                    x, y = self.image_to_screen(*point)
+                    name = names[index] if index < len(names) else f"{label}_{index + 1}"
+                    labels.append((str(name), (x + 10, y - 10), tuple(annotation["color_bgr"])))
                 continue
             if annotation["geometry_type"] == "directed_point":
                 x, y = self.image_to_screen(*annotation["stop_pixel"])
@@ -955,6 +1009,10 @@ class OrthoImageAnnotator:
         return ask_yes_no("确认保存该标注结果？", default=True)
 
     def undo(self) -> None:
+        if self.selected_points:
+            removed = self.selected_points.pop()
+            print(f"Removed robot start point: {removed}")
+            return
         if self.patrol_points:
             removed = self.patrol_points.pop()
             print(f"Removed current patrol point: {removed}")
@@ -1016,7 +1074,15 @@ class OrthoImageAnnotator:
             if annotation.get("category") == "planning_boundary":
                 continue
             color = tuple(annotation["color_bgr"])
-            if annotation["geometry_type"] == "directed_point":
+            if annotation["geometry_type"] == "multi_point":
+                for point in annotation["points_pixel"]:
+                    center = tuple(np.asarray(point, dtype=np.int32))
+                    cv2.drawMarker(
+                        review, center, color, cv2.MARKER_CROSS,
+                        max(18, int(self.args.line_width * 9)),
+                        max(3, int(self.args.line_width * 2)), cv2.LINE_AA,
+                    )
+            elif annotation["geometry_type"] == "directed_point":
                 stop = tuple(np.asarray(annotation["stop_pixel"], dtype=np.int32))
                 look = tuple(np.asarray(annotation["look_pixel"], dtype=np.int32))
                 cv2.arrowedLine(review, stop, look, color, thickness=max(4, int(self.args.line_width * 2)), tipLength=0.25)
@@ -1146,7 +1212,10 @@ class OrthoImageAnnotator:
         print("  Q: save and quit")
         if category is None:
             return
-        if category["geometry"] == "directed_point":
+        if category["geometry"] == "point":
+            print("  Left-click: add a robot start point")
+            print("  Enter: finish after at least one start point is added")
+        elif category["geometry"] == "directed_point":
             print("  Left-click: first point is patrol stop")
             print("  Left-click again: second point sets viewing direction")
             print("  Enter: finish this annotation after at least one patrol point is completed")
@@ -1174,6 +1243,7 @@ class OrthoImageAnnotator:
         self.closed_directed_points = []
         self.closed_polylines = []
         self.closed_circles = []
+        self.selected_points = []
         self.shape_points = []
         self.patrol_points = []
         shape_text = f", shape={category['shape_name']}" if category.get("shape_name") else ""
@@ -1230,6 +1300,8 @@ class OrthoImageAnnotator:
                         self.finish_current_polygons()
                     elif self.active_category["geometry"] == "circle":
                         self.finish_current_circles()
+                    elif self.active_category["geometry"] == "point":
+                        self.finish_current_points()
                     elif self.active_category["geometry"] == "directed_point":
                         self.finish_current_directed_points()
                     elif self.active_category["geometry"] in ("directed_polyline", "polyline"):
@@ -1241,6 +1313,7 @@ class OrthoImageAnnotator:
                 self.closed_directed_points = []
                 self.closed_polylines = []
                 self.closed_circles = []
+                self.selected_points = []
                 self.shape_points = []
                 self.patrol_points = []
             elif key in (ord("q"), ord("Q")):
