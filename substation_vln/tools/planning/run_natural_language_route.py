@@ -234,8 +234,9 @@ def main() -> int:
     ]
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_dir = resolve_project_path(paths["output_dir"])
-    output_json = output_dir / f"natural_language_route_{timestamp}.json"
-    output_png = output_dir / f"natural_language_route_{timestamp}.png"
+    output_stem = f"natural_language_route_{timestamp}_{plan.movement_mode}"
+    output_json = output_dir / f"{output_stem}.json"
+    output_png = output_dir / f"{output_stem}.png"
     payload = {
         "built_at": datetime.now().isoformat(timespec="seconds"),
         "instruction_plan": plan.to_dict(),

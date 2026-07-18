@@ -263,6 +263,14 @@ python substation_vln/tools/planning/run_natural_language_route.py
 
 输入文字配置在 `configs/tools/planning/run_natural_language_route.yaml` 的 `instruction` 字段。
 
+规划结果按 `natural_language_route_<系统时间>_<模式>.json/.png` 保存。使用机器人摄像头以固定速度在 Habitat-GS 中播放最新路线：
+
+```bash
+python substation_vln/tools/visualization/play_planned_route.py
+```
+
+播放参数位于 `configs/tools/visualization/play_planned_route_erfeishan.yaml`。播放器读取预处理保存的 `gaussian_to_pointcloud_transform.json`，对原始 Gaussian 应用“Gaussian → 校正后点云”配准矩阵，并使用路线起点作为局部原点以避免大地坐标的 float32 精度损失。行驶阶段默认按 XY 轨迹切线调整第一人称航向，终点再切换到规划的机身航向与云台 pan/tilt。
+
 也可以复用已经解析的任务，避免再次调用 API：
 
 ```bash

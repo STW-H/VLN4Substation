@@ -3,4 +3,5 @@
 __all__ = [
     "habitat_gs",
     "pointcloud",
+    "trajectory_player",
 ]

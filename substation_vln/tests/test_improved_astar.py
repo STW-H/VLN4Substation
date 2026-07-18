@@ -29,9 +29,115 @@ from substation_vln.tasks.schema import RoutePlan
 from substation_vln.tasks.instruction_parser import (
     canonicalize_catalog_references,
 )
+from substation_vln.preprocessing.coordinate_transforms import (
+    world_camera_to_raw_gaussian_pose,
+)
+from substation_vln.visualization.trajectory_player import trajectory_from_route_payload
 
 
 class PosePlanningTest(unittest.TestCase):
+    def test_world_camera_pose_is_mapped_into_untransformed_gaussian(self):
+        angle = math.radians(30.0)
+        rotation = np.asarray(
+            [
+                [math.cos(angle), -math.sin(angle), 0.0],
+                [math.sin(angle), math.cos(angle), 0.0],
+                [0.0, 0.0, 1.0],
+            ]
+        )
+        transform = np.eye(4)
+        transform[:3, :3] = 2.0 * rotation
+        transform[:3, 3] = [100.0, 200.0, 3.0]
+        expected_raw_position = np.asarray([4.0, -2.0, 1.5])
+        world_position = (
+            transform[:3, :3] @ expected_raw_position + transform[:3, 3]
+        )
+        yaw, pitch = 0.7, 0.2
+
+        raw_position, quat = world_camera_to_raw_gaussian_pose(
+            transform, world_position, yaw, pitch
+        )
+        np.testing.assert_allclose(raw_position, expected_raw_position, atol=1.0e-9)
+
+        w, x, y, z = quat
+        raw_camera_rotation = np.asarray(
+            [
+                [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+                [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+                [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)],
+            ]
+        )
+        raw_forward = raw_camera_rotation @ np.asarray([0.0, 0.0, -1.0])
+        world_forward = transform[:3, :3] @ raw_forward
+        world_forward /= np.linalg.norm(world_forward)
+        expected_forward = np.asarray(
+            [math.cos(pitch) * math.cos(yaw), math.cos(pitch) * math.sin(yaw), math.sin(pitch)]
+        )
+        np.testing.assert_allclose(world_forward, expected_forward, atol=1.0e-9)
+
+    def test_camera_trajectory_uses_fixed_linear_and_angular_speeds(self):
+        payload = {
+            "route": {
+                "states": [
+                    {"xy": [0.0, 0.0], "yaw_rad": 0.0},
+                    {"xy": [1.0, 0.0], "yaw_rad": 0.0},
+                    {"xy": [1.0, 0.0], "yaw_rad": math.pi / 2.0},
+                ]
+            }
+        }
+        trajectory = trajectory_from_route_payload(
+            payload,
+            camera_height_m=1.0,
+            linear_speed_mps=0.5,
+            angular_speed_deg_s=45.0,
+            apply_terminal_camera_pose=False,
+            terminal_hold_s=0.0,
+        )
+        self.assertAlmostEqual(trajectory.duration_s, 4.0)
+        self.assertAlmostEqual(trajectory.pose_at(1.0).x, 0.5)
+        self.assertAlmostEqual(trajectory.pose_at(3.0).yaw_rad, math.pi / 4.0)
+
+    def test_terminal_camera_keeps_positive_z_up_elevation_in_habitat(self):
+        payload = {
+            "route": {"states": [{"xy": [2.0, 3.0], "yaw_rad": 0.2}]},
+            "target": {
+                "route_segment": {
+                    "camera": {"pan_rad": 0.3, "tilt_rad": 0.4}
+                }
+            },
+        }
+        trajectory = trajectory_from_route_payload(
+            payload,
+            camera_height_m=1.0,
+            linear_speed_mps=0.5,
+            angular_speed_deg_s=45.0,
+            apply_terminal_camera_pose=True,
+            terminal_hold_s=0.0,
+        )
+        final_pose = trajectory.pose_at(trajectory.duration_s)
+        self.assertAlmostEqual(final_pose.yaw_rad, 0.5)
+        self.assertAlmostEqual(final_pose.pitch_rad, 0.4)
+
+    def test_motion_tangent_camera_yaw_follows_xy_trajectory(self):
+        payload = {
+            "route": {
+                "states": [
+                    {"xy": [0.0, 0.0], "yaw_rad": 0.0},
+                    {"xy": [0.0, 1.0], "yaw_rad": 0.0},
+                ]
+            }
+        }
+        trajectory = trajectory_from_route_payload(
+            payload,
+            camera_height_m=1.0,
+            linear_speed_mps=1.0,
+            angular_speed_deg_s=45.0,
+            apply_terminal_camera_pose=False,
+            terminal_hold_s=0.0,
+            travel_yaw_source="motion_tangent",
+        )
+        self.assertAlmostEqual(trajectory.pose_at(0.0).yaw_rad, math.pi / 2.0)
+
     def test_robot_start_point_batch_has_selectable_names(self):
         category = next(item for item in CATEGORIES.values() if item["key"] == "robot_start_point")
         annotation = make_annotation(

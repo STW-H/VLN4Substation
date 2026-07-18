@@ -1,0 +1,29 @@
+# First-person fixed-speed playback of a planned route in Habitat-GS.
+paths:
+  # null selects the newest natural_language_route_*.json in route_dir.
+  route_json: null
+  route_dir: substation_vln/outputs/220kv_erfeishan/planning/natural_language_route
+  gaussian: substation_vln/data/raw/220kv_erfeishan/gaussian/layer_2_point_cloud.ply
+  registration_json: substation_vln/data/processed/220kv_erfeishan/registration/gaussian_to_pointcloud_transform.json
+  gaussian_stage_link: substation_vln/outputs/220kv_erfeishan/gaussian_playback/erfeishan_registered_source.gs.ply
+
+playback:
+  linear_speed_mps: 0.5
+  angular_speed_deg_s: 30.0
+  # motion_tangent keeps first-person viewing direction aligned with XY travel.
+  # body reproduces the planned robot body yaw, including lateral motion.
+  travel_yaw_source: motion_tangent
+  fps: 24
+  loop: false
+  apply_terminal_camera_pose: true
+  terminal_hold_s: 3.0
+
+camera:
+  height_m: 1.0
+  hfov_deg: 90.0
+  width: 1280
+  height: 720
+  gpu_device_id: 0
+
+display:
+  window_name: Habitat-GS Planned Route - First Person
